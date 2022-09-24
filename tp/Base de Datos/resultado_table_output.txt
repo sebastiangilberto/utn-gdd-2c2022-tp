@@ -1,0 +1,3 @@
+Changed database context to 'GD2C2022'.
+Msg 2714, Level 16, State 6, Server gdd-practica, Line 1
+There is already an object named 'Maestra' in the database.
