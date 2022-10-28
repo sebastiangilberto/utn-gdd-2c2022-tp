@@ -637,6 +637,24 @@ AS
 
 GO
 --descuentos
+IF Object_id('GAME_OF_JOINS.Migrar_Descuentos') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Descuentos 
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Descuentos
+AS 
+    INSERT INTO GAME_OF_JOINS.descuentos
+                (venta_descuento_concepto, venta_descuento_valor) 
+	(
+		SELECT
+			DISTINCT VENTA_DESCUENTO_CONCEPTO,
+			VENTA_DESCUENTO_IMPORTE
+		FROM
+			gd_esquema.Maestra
+		WHERE
+			VENTA_DESCUENTO_CONCEPTO IS NOT NULL
+	)
+GO
 --localidades
 IF Object_id('GAME_OF_JOINS.Migrar_Localidades') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Localidades 
@@ -690,6 +708,32 @@ AS
 GO
 
 --productos
+IF Object_id('GAME_OF_JOINS.Migrar_Productos') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos 
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos
+AS 
+    INSERT INTO GAME_OF_JOINS.productos
+                (producto_codigo, producto_nombre, producto_descripcion, id_producto_categoria, id_producto_marca, id_producto_material) 
+	(
+		SELECT
+			DISTINCT M.PRODUCTO_CODIGO,
+			M.PRODUCTO_NOMBRE,
+			M.PRODUCTO_DESCRIPCION,
+			CP.id,
+			PMAR.id,
+			PMAT.id
+		FROM
+			gd_esquema.Maestra M
+		INNER JOIN GAME_OF_JOINS.categorias_productos CP ON
+			M.PRODUCTO_CATEGORIA = CP.producto_categoria
+		INNER JOIN GAME_OF_JOINS.productos_marcas PMAR ON
+			M.PRODUCTO_MARCA = PMAR.producto_marca
+		INNER JOIN GAME_OF_JOINS.productos_material PMAT ON
+			M.PRODUCTO_MATERIAL = PMAT.producto_material
+	)
+GO
 --productos_compras
 --productos_marcas
 IF Object_id('GAME_OF_JOINS.Migrar_Productos_Marcas') IS NOT NULL 
@@ -887,51 +931,7 @@ EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Localidades
 EXEC GAME_OF_JOINS.Migrar_Codigos_Postales
 EXEC GAME_OF_JOINS.Migrar_Proveedores
-
-GO
-<<<<<<< HEAD
-=======
-
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Descuentos
-AS 
-    INSERT INTO GAME_OF_JOINS.descuentos
-                (venta_descuento_concepto, venta_descuento_valor) 
-	(
-		SELECT		DISTINCT 
-					VENTA_DESCUENTO_CONCEPTO,
-					VENTA_DESCUENTO_IMPORTE
-		FROM		gd_esquema.Maestra
-		WHERE		VENTA_DESCUENTO_CONCEPTO IS NOT NULL
-	)
-GO
-
 EXEC GAME_OF_JOINS.Migrar_Descuentos
-
-GO
-
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos
-AS 
-    INSERT INTO GAME_OF_JOINS.productos
-                (producto_codigo, producto_nombre, producto_descripcion, id_producto_categoria, id_producto_marca, id_producto_material) 
-	(
-		SELECT		DISTINCT
-					M.PRODUCTO_CODIGO,
-					M.PRODUCTO_NOMBRE,
-					M.PRODUCTO_DESCRIPCION,
-					CP.id,
-					PMAR.id,
-					PMAT.id
-		FROM		gd_esquema.Maestra M
-		INNER JOIN	GAME_OF_JOINS.categorias_productos CP
-		ON			M.PRODUCTO_CATEGORIA = CP.producto_categoria
-		INNER JOIN	GAME_OF_JOINS.productos_marcas PMAR
-		ON			M.PRODUCTO_MARCA = PMAR.producto_marca
-		INNER JOIN	GAME_OF_JOINS.productos_material PMAT
-		ON			M.PRODUCTO_MATERIAL = PMAT.producto_material
-	)
-GO
-
 EXEC GAME_OF_JOINS.Migrar_Productos
 
 GO
->>>>>>> 256ea62 (Agrego SPs)
