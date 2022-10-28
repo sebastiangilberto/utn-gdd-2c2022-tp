@@ -229,7 +229,7 @@ CREATE TABLE GAME_OF_JOINS.ventas_medios_envios
 CREATE TABLE GAME_OF_JOINS.productos_material 
   ( 
 	 id INT IDENTITY(1,1) PRIMARY KEY,
-     producto_categoria    nvarchar(50),  
+     producto_material    nvarchar(50),  
   ) 
 
 CREATE TABLE GAME_OF_JOINS.productos_marcas 
@@ -487,8 +487,6 @@ GO
 ------------------------------------------------
 ------------ Migracion de datos ----------------
 ------------------------------------------------
-
-
 --canales 
 IF Object_id('GAME_OF_JOINS.Migrar_Canales') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Canales 
@@ -499,12 +497,33 @@ CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Canales
 AS 
     INSERT INTO GAME_OF_JOINS.canales 
                 (canal) 
-    SELECT DISTINCT VENTA_CANAL 
-    FROM   gd_esquema.Maestra WHERE VENTA_CANAL IS NOT NULL
+	SELECT
+		DISTINCT VENTA_CANAL
+	FROM
+		gd_esquema.Maestra
+	WHERE
+		VENTA_CANAL IS NOT NULL
 
 GO
 
 --categorias_productos
+IF Object_id('GAME_OF_JOINS.Migrar_Categorias_Productos') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Categorias_Productos 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Categorias_Productos 
+AS 
+    INSERT INTO GAME_OF_JOINS.categorias_productos 
+                (producto_categoria)
+	SELECT
+		DISTINCT PRODUCTO_CATEGORIA
+	FROM
+		gd_esquema.maestra
+	WHERE
+		PRODUCTO_CATEGORIA IS NOT NULL
+
+GO
 --clientes
 --codigos_postales
 --compras
@@ -515,56 +534,90 @@ GO
 --localidades
 --medios_envios_habilitados
 --medios_pago
+IF Object_id('GAME_OF_JOINS.Migrar_Medio_Pago') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Medio_Pago 
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Medio_Pago
+AS 
+    INSERT INTO GAME_OF_JOINS.medios_pago
+                (medio_pago_descuento, medio_pago) 
+	SELECT
+		DISTINCT 0,
+		VENTA_MEDIO_PAGO
+	FROM
+		gd_esquema.Maestra
+	WHERE
+		VENTA_MEDIO_PAGO IS NOT NULL
+GO
+
 --productos
 --productos_compras
 --productos_marcas
+IF Object_id('GAME_OF_JOINS.Migrar_Productos_Marcas') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Marcas 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Productos_Marcas 
+AS 
+    INSERT INTO GAME_OF_JOINS.productos_marcas 
+                (producto_marca)
+	SELECT
+		DISTINCT PRODUCTO_MARCA
+	FROM
+		gd_esquema.maestra
+	WHERE
+		PRODUCTO_MARCA IS NOT NULL
+	ORDER BY
+		1 ASC
+
+GO
 --productos_material
+IF Object_id('GAME_OF_JOINS.Migrar_Productos_Material') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Material 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Productos_Material 
+AS 
+    INSERT INTO GAME_OF_JOINS.productos_material 
+                (producto_material)
+	SELECT
+		DISTINCT PRODUCTO_MATERIAL
+	FROM
+		gd_esquema.maestra
+	WHERE
+		PRODUCTO_MATERIAL IS NOT NULL
+
+GO
 --productos_ventas
 --proveedores
 --provincias
---tipos_cupones
---tipos_variantes_productos
---variantes_productos
---ventas
---ventas_canales
---ventas_cupones
---ventas_descuento
---ventas_envios
---ventas_medio_pago
---ventas_medios_envios
---categorias_productos
---clientes
+IF Object_id('GAME_OF_JOINS.Migrar_Provincias') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Provincias 
 
-
-------------------------------------------------
------------- Migracion de datos ----------------
-------------------------------------------------
-
-
-EXEC GAME_OF_JOINS.Migrar_Canales
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Provincias
+AS 
+    INSERT INTO GAME_OF_JOINS.provincias
+                (provincia) 
+	SELECT
+		DISTINCT PROVEEDOR_PROVINCIA
+	FROM
+		gd_esquema.Maestra
+	WHERE
+		PROVEEDOR_PROVINCIA IS NOT NULL
+	UNION
+	SELECT
+		DISTINCT CLIENTE_PROVINCIA
+	FROM
+		gd_esquema.Maestra
+	WHERE
+		CLIENTE_PROVINCIA IS NOT NULL
 
 GO
 
---categorias_productos
---clientes
-
-
---codigos_postales
---compras
---compras_descuentos
---compras_medio_pago
---cupones
---descuentos
---localidades
---medios_envios_habilitados
--- X medios_pago
---productos
---productos_compras
---productos_marcas
---productos_material
---productos_ventas
---proveedores
--- X provincias
 --tipos_cupones
 --tipos_variantes
 --variantes
@@ -581,38 +634,13 @@ GO
 ------------ Migracion de datos ----------------
 ------------------------------------------------
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Medio_Pago
-AS 
-    INSERT INTO GAME_OF_JOINS.medios_pago
-                (medio_pago_descuento, medio_pago) 
-    SELECT DISTINCT 0, VENTA_MEDIO_PAGO
-    FROM   gd_esquema.Maestra WHERE VENTA_MEDIO_PAGO IS NOT NULL
 
-GO
-
-EXEC GAME_OF_JOINS.Medio_Pago
-
-GO
-
---select * from GAME_OF_JOINS.medios_pago
-
-------------------------------------------------
------------- Migracion de datos ----------------
-------------------------------------------------
-
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Provincias
-AS 
-    INSERT INTO GAME_OF_JOINS.provincias
-                (provincia) 
-	(
-		SELECT DISTINCT PROVEEDOR_PROVINCIA FROM gd_esquema.Maestra WHERE PROVEEDOR_PROVINCIA IS NOT NULL
-		UNION
-		SELECT DISTINCT CLIENTE_PROVINCIA FROM   gd_esquema.Maestra WHERE CLIENTE_PROVINCIA IS NOT NULL
-	)
-GO
-
+EXEC GAME_OF_JOINS.Migrar_Canales
+EXEC GAME_OF_JOINS.Migrar_Medio_Pago
+EXEC GAME_OF_JOINS.Migrar_Productos_Marcas
+EXEC GAME_OF_JOINS.Migrar_Productos_Material
+EXEC GAME_OF_JOINS.Migrar_Categorias_Productos
 EXEC GAME_OF_JOINS.Migrar_Provincias
 
 GO
 
---SELECT * FROM GAME_OF_JOINS.provincias
