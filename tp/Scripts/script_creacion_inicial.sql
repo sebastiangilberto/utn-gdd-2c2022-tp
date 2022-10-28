@@ -526,6 +526,44 @@ AS
 
 GO
 --clientes
+IF Object_id('GAME_OF_JOINS.Migrar_Clientes') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Clientes 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Clientes 
+AS 
+    INSERT INTO GAME_OF_JOINS.clientes 
+                (cliente_dni,
+                cliente_apellido,
+                cliente_nombre,
+                cliente_direccion,
+                cliente_telefono,
+                cliente_mail,
+                cliente_fecha_nac,
+                cliente_codigo_postal
+                ) 
+	SELECT
+		DISTINCT m.CLIENTE_DNI,
+		m.CLIENTE_APELLIDO,
+		m.CLIENTE_NOMBRE,
+		m.CLIENTE_DIRECCION,
+		m.CLIENTE_TELEFONO,
+		m.CLIENTE_MAIL,
+		m.CLIENTE_FECHA_NAC,
+		cp.id
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.localidades l ON
+		l.localidad = m.CLIENTE_LOCALIDAD
+	INNER JOIN GAME_OF_JOINS.codigos_postales cp ON
+		cp.id_localidad = l.id
+		AND cp.codigo_postal = m.CLIENTE_CODIGO_POSTAL
+	WHERE
+		m.CLIENTE_DNI IS NOT NULL
+
+GO
+
 --codigos_postales
 IF Object_id('GAME_OF_JOINS.Migrar_Codigos_Postales') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Codigos_Postales 
@@ -693,6 +731,37 @@ AS
 GO
 --productos_ventas
 --proveedores
+IF Object_id('GAME_OF_JOINS.Migrar_Proveedores') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Proveedores 
+AS 
+    INSERT INTO GAME_OF_JOINS.proveedores 
+                (proveedor_cuit,
+                proveedor_razon_social,
+                proveedor_domicilio,
+                proveedor_mail,
+                proveedor_codigo_postal
+                ) 
+	SELECT
+		DISTINCT m.PROVEEDOR_CUIT,
+		m.PROVEEDOR_RAZON_SOCIAL,
+		m.PROVEEDOR_DOMICILIO,
+		m.PROVEEDOR_MAIL,
+		cp.id
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.localidades l ON
+		l.localidad = m.PROVEEDOR_LOCALIDAD
+	INNER JOIN GAME_OF_JOINS.codigos_postales cp ON
+		cp.id_localidad = l.id
+		AND cp.codigo_postal = m.PROVEEDOR_CODIGO_POSTAL
+	WHERE
+		m.PROVEEDOR_CUIT IS NOT NULL
+
+GO
 --provincias
 IF Object_id('GAME_OF_JOINS.Migrar_Provincias') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Provincias 
@@ -817,5 +886,6 @@ EXEC GAME_OF_JOINS.Migrar_Tipos_Cupones
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Localidades
 EXEC GAME_OF_JOINS.Migrar_Codigos_Postales
+EXEC GAME_OF_JOINS.Migrar_Proveedores
 
 GO
