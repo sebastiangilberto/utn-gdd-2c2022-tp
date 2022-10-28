@@ -95,14 +95,14 @@ CREATE TABLE GAME_OF_JOINS.ventas
 
 CREATE TABLE GAME_OF_JOINS.ventas_medio_pago 
   ( 
-     id       INT PRIMARY KEY, 
+     id       INT IDENTITY(1,1) PRIMARY KEY, 
      venta_medio_pago_costo     DECIMAL(18,2),
      id_medio_pago    INT, --fk
   ) 
 
 CREATE TABLE GAME_OF_JOINS.medios_pago 
   ( 
-     id     INT PRIMARY KEY, 
+     id     INT IDENTITY(1,1) PRIMARY KEY, 
      medio_pago_descuento DECIMAL(18,2), 
      medio_pago  nvarchar(255), 
   ) 
@@ -110,7 +110,7 @@ CREATE TABLE GAME_OF_JOINS.medios_pago
 
 CREATE TABLE GAME_OF_JOINS.ventas_descuento 
   ( 
-     id     INT PRIMARY KEY, 
+     id     INT IDENTITY(1,1) PRIMARY KEY, 
      venta_codigo  DECIMAL(19,0), --fk
      venta_descuento_importe   DECIMAL(18,2),
 	 id_descuento   INT, --fk
@@ -118,7 +118,7 @@ CREATE TABLE GAME_OF_JOINS.ventas_descuento
 
 CREATE TABLE GAME_OF_JOINS.ventas_canales 
   ( 
-     id     INT PRIMARY KEY, 
+     id     INT IDENTITY(1,1) PRIMARY KEY, 
      venta_codigo  DECIMAL(19,0), --fk
      id_canal  INT,  --fk
      venta_canal_costo DECIMAL(18,2), 
@@ -161,14 +161,14 @@ CREATE TABLE GAME_OF_JOINS.canales
 
 CREATE TABLE GAME_OF_JOINS.descuentos
   ( 
-     id      INT PRIMARY KEY, 
+     id      INT IDENTITY(1,1) PRIMARY KEY, 
      venta_descuento_concepto DECIMAL(18,0), 
      venta_descuento_valor    DECIMAL(18,2), 
   ) 
   
   CREATE TABLE GAME_OF_JOINS.tipos_cupones
   ( 
-     id      INT PRIMARY KEY, 
+     id      INT IDENTITY(1,1) PRIMARY KEY, 
      venta_cupon_tipo nvarchar(50), 
   ) 
 
@@ -187,7 +187,7 @@ CREATE TABLE GAME_OF_JOINS.tipos_variantes
 
 CREATE TABLE GAME_OF_JOINS.ventas_envios
   ( 
-     id      INT PRIMARY KEY, 
+     id      INT IDENTITY(1,1) PRIMARY KEY, 
      venta_codigo DECIMAL(19,0),  --fk
      venta_envio_precio    DECIMAL(18,2), 
      id_medio_habilitado      INT,  --fk
@@ -195,7 +195,7 @@ CREATE TABLE GAME_OF_JOINS.ventas_envios
 
 CREATE TABLE GAME_OF_JOINS.medios_envios_habilitados
   ( 
-     id      INT PRIMARY KEY, 
+     id      INT IDENTITY(1,1) PRIMARY KEY, 
      venta_medio_envio DECIMAL(18,0),  --fk
      codigo_postal    DECIMAL(18,0),  --fk
      venta_envio_precio_actual      DECIMAL(18,2), 
@@ -210,14 +210,14 @@ CREATE TABLE GAME_OF_JOINS.codigos_postales
 
 CREATE TABLE GAME_OF_JOINS.localidades
   ( 
-     id      INT PRIMARY KEY, 
+     id      INT IDENTITY(1,1) PRIMARY KEY, 
      localidad nvarchar(255), 
      id_provincia    INT,  --fk
   ) 
 
 CREATE TABLE GAME_OF_JOINS.provincias
   ( 
-     id      INT PRIMARY KEY, 
+     id      INT IDENTITY(1,1) PRIMARY KEY, 
      provincia nvarchar(255), 
   ) 
 
@@ -228,25 +228,25 @@ CREATE TABLE GAME_OF_JOINS.ventas_medios_envios
 
 CREATE TABLE GAME_OF_JOINS.productos_material 
   ( 
-	 id INT PRIMARY KEY,
+	 id INT IDENTITY(1,1) PRIMARY KEY,
      producto_categoria    nvarchar(50),  
   ) 
 
 CREATE TABLE GAME_OF_JOINS.productos_marcas 
   ( 
-	 id INT PRIMARY KEY,
+	 id INT IDENTITY(1,1) PRIMARY KEY,
      producto_marca    nvarchar(255), 
   ) 
 
 CREATE TABLE GAME_OF_JOINS.categorias_productos
   ( 
-     id      INT PRIMARY KEY, 
+     id      INT IDENTITY(1,1) PRIMARY KEY, 
      producto_categoria nvarchar(255), 
   ) 
 
 CREATE TABLE GAME_OF_JOINS.productos_ventas 
   ( 
-	 id INT PRIMARY KEY,
+	 id INT IDENTITY(1,1) PRIMARY KEY,
      producto_codigo    nvarchar(50),  --fk
 	 venta_codigo   DECIMAL(19,0), --fk
      producto_variante_codigo    nvarchar(50),  --fk
@@ -266,7 +266,7 @@ CREATE TABLE GAME_OF_JOINS.variantes_productos
 
 CREATE TABLE GAME_OF_JOINS.productos_compras
   ( 
-	 id INT PRIMARY KEY,
+	 id INT IDENTITY(1,1) PRIMARY KEY,
      producto_codigo    nvarchar(50),  --fk
 	 compra_numero   DECIMAL(19,0), --fk
      producto_variante_codigo    nvarchar(50),  --fk
@@ -277,7 +277,7 @@ CREATE TABLE GAME_OF_JOINS.productos_compras
 
 CREATE TABLE GAME_OF_JOINS.compras_descuentos 
   ( 
-	 id INT PRIMARY KEY,
+	 id INT IDENTITY(1,1) PRIMARY KEY,
      compra_numero    DECIMAL(19,0),  --fk
 	 descuento_compra_valor   DECIMAL(18,2),
      descuento_compra_codigo    DECIMAL(19,0), 
@@ -294,7 +294,7 @@ CREATE TABLE GAME_OF_JOINS.compras
 
 CREATE TABLE GAME_OF_JOINS.compras_medio_pago 
   ( 
-	 id INT PRIMARY KEY,
+	 id INT IDENTITY(1,1) PRIMARY KEY,
      compra_medio_pago    nvarchar(255), 
   ) 
 
@@ -495,7 +495,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Canales') IS NOT NULL
 
 GO 
 
-CREATE PROCEDURE GAME_OF_JOINS.Migrar_Canales 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Canales 
 AS 
     INSERT INTO GAME_OF_JOINS.canales 
                 (canal) 
@@ -545,23 +545,10 @@ EXEC GAME_OF_JOINS.Migrar_Canales
 
 GO
 
-select * from GAME_OF_JOINS.Canales
-
 --categorias_productos
 --clientes
-select
-	distinct CLIENTE_DNI,
-	CLIENTE_NOMBRE,
-	CLIENTE_APELLIDO,
-	CLIENTE_DIRECCION,
-	CLIENTE_TELEFONO,
-	CLIENTE_MAIL,
-	CLIENTE_FECHA_NAC,
-	CLIENTE_LOCALIDAD,
-	CLIENTE_CODIGO_POSTAL,
-	CLIENTE_PROVINCIA
-where
-	CLIENTE_DNI
+
+
 --codigos_postales
 --compras
 --compras_descuentos
@@ -570,14 +557,14 @@ where
 --descuentos
 --localidades
 --medios_envios_habilitados
---medios_pago
+-- X medios_pago
 --productos
 --productos_compras
 --productos_marcas
 --productos_material
 --productos_ventas
 --proveedores
---provincias
+-- X provincias
 --tipos_cupones
 --tipos_variantes
 --variantes
@@ -589,3 +576,43 @@ where
 --ventas_envios
 --ventas_medio_pago
 --ventas_medios_envios
+
+------------------------------------------------
+------------ Migracion de datos ----------------
+------------------------------------------------
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Medio_Pago
+AS 
+    INSERT INTO GAME_OF_JOINS.medios_pago
+                (medio_pago_descuento, medio_pago) 
+    SELECT DISTINCT 0, VENTA_MEDIO_PAGO
+    FROM   gd_esquema.Maestra WHERE VENTA_MEDIO_PAGO IS NOT NULL
+
+GO
+
+EXEC GAME_OF_JOINS.Medio_Pago
+
+GO
+
+--select * from GAME_OF_JOINS.medios_pago
+
+------------------------------------------------
+------------ Migracion de datos ----------------
+------------------------------------------------
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Provincias
+AS 
+    INSERT INTO GAME_OF_JOINS.provincias
+                (provincia) 
+	(
+		SELECT DISTINCT PROVEEDOR_PROVINCIA FROM gd_esquema.Maestra WHERE PROVEEDOR_PROVINCIA IS NOT NULL
+		UNION
+		SELECT DISTINCT CLIENTE_PROVINCIA FROM   gd_esquema.Maestra WHERE CLIENTE_PROVINCIA IS NOT NULL
+	)
+GO
+
+EXEC GAME_OF_JOINS.Migrar_Provincias
+
+GO
+
+--SELECT * FROM GAME_OF_JOINS.provincias
