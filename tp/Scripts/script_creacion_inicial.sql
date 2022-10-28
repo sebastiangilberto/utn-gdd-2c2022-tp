@@ -155,7 +155,7 @@ CREATE TABLE GAME_OF_JOINS.cupones
 
 CREATE TABLE GAME_OF_JOINS.canales
   ( 
-     id      INT PRIMARY KEY, 
+     id      INT IDENTITY(1, 1) PRIMARY KEY, 
      canal nvarchar(255), 
   ) 
 
@@ -172,11 +172,17 @@ CREATE TABLE GAME_OF_JOINS.descuentos
      venta_cupon_tipo nvarchar(50), 
   ) 
 
-CREATE TABLE GAME_OF_JOINS.tipos_variantes_productos
+CREATE TABLE GAME_OF_JOINS.variantes
   ( 
-     id      INT PRIMARY KEY, 
-     producto_variante nvarchar(50), 
-     producto_tipo_variante    nvarchar(50), 
+     id      INT IDENTITY(1,1) PRIMARY KEY, 
+     variante nvarchar(50), 
+     id_tipo_variante    INT, --fk
+  ) 
+
+CREATE TABLE GAME_OF_JOINS.tipos_variantes
+  ( 
+     id      INT IDENTITY(1,1) PRIMARY KEY, 
+     tipo_variante    nvarchar(50), 
   ) 
 
 CREATE TABLE GAME_OF_JOINS.ventas_envios
@@ -253,8 +259,9 @@ CREATE TABLE GAME_OF_JOINS.variantes_productos
   ( 
 	 producto_variante_codigo nvarchar(50) PRIMARY KEY,
      producto_codigo    nvarchar(50),  --fk
-	 id_tipo_variante_producto   INT, --fk
-     variante_producto_precio    DECIMAL(18,2), 
+	 id_variante   INT, --fk
+     variante_producto_precio    DECIMAL(18,2),
+     stock INT NOT NULL, 
   ) 
 
 CREATE TABLE GAME_OF_JOINS.productos_compras
@@ -422,7 +429,13 @@ ALTER TABLE GAME_OF_JOINS.variantes_productos
   ADD CONSTRAINT fk_variantes_productos_producto_codigo FOREIGN KEY (producto_codigo) REFERENCES GAME_OF_JOINS.productos(producto_codigo) 
 
 ALTER TABLE GAME_OF_JOINS.variantes_productos 
-  ADD CONSTRAINT fk_variantes_productos_id_tipo_variante_producto FOREIGN KEY (id_tipo_variante_producto) REFERENCES GAME_OF_JOINS.tipos_variantes_productos(id) 
+  ADD CONSTRAINT fk_variantes_productos_id_variante FOREIGN KEY (id_variante) REFERENCES GAME_OF_JOINS.variantes(id) 
+
+GO
+
+--variantes
+ALTER TABLE GAME_OF_JOINS.variantes 
+  ADD CONSTRAINT fk_variantes_id_tipo_variante FOREIGN KEY (id_tipo_variante) REFERENCES GAME_OF_JOINS.tipos_variantes(id) 
 
 GO
 
@@ -470,3 +483,109 @@ ALTER TABLE GAME_OF_JOINS.proveedores
   ADD CONSTRAINT fk_proveedores_proveedor_codigo_postal FOREIGN KEY (proveedor_codigo_postal) REFERENCES GAME_OF_JOINS.codigos_postales(codigo_postal) 
 
 GO
+
+------------------------------------------------
+------------ Migracion de datos ----------------
+------------------------------------------------
+
+
+--canales 
+IF Object_id('GAME_OF_JOINS.Migrar_Canales') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Canales 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Canales 
+AS 
+    INSERT INTO GAME_OF_JOINS.canales 
+                (canal) 
+    SELECT DISTINCT VENTA_CANAL 
+    FROM   gd_esquema.Maestra WHERE VENTA_CANAL IS NOT NULL
+
+GO
+
+--categorias_productos
+--clientes
+--codigos_postales
+--compras
+--compras_descuentos
+--compras_medio_pago
+--cupones
+--descuentos
+--localidades
+--medios_envios_habilitados
+--medios_pago
+--productos
+--productos_compras
+--productos_marcas
+--productos_material
+--productos_ventas
+--proveedores
+--provincias
+--tipos_cupones
+--tipos_variantes_productos
+--variantes_productos
+--ventas
+--ventas_canales
+--ventas_cupones
+--ventas_descuento
+--ventas_envios
+--ventas_medio_pago
+--ventas_medios_envios
+--categorias_productos
+--clientes
+
+
+------------------------------------------------
+------------ Migracion de datos ----------------
+------------------------------------------------
+
+
+EXEC GAME_OF_JOINS.Migrar_Canales
+
+GO
+
+select * from GAME_OF_JOINS.Canales
+
+--categorias_productos
+--clientes
+select
+	distinct CLIENTE_DNI,
+	CLIENTE_NOMBRE,
+	CLIENTE_APELLIDO,
+	CLIENTE_DIRECCION,
+	CLIENTE_TELEFONO,
+	CLIENTE_MAIL,
+	CLIENTE_FECHA_NAC,
+	CLIENTE_LOCALIDAD,
+	CLIENTE_CODIGO_POSTAL,
+	CLIENTE_PROVINCIA
+where
+	CLIENTE_DNI
+--codigos_postales
+--compras
+--compras_descuentos
+--compras_medio_pago
+--cupones
+--descuentos
+--localidades
+--medios_envios_habilitados
+--medios_pago
+--productos
+--productos_compras
+--productos_marcas
+--productos_material
+--productos_ventas
+--proveedores
+--provincias
+--tipos_cupones
+--tipos_variantes
+--variantes
+--variantes_productos
+--ventas
+--ventas_canales
+--ventas_cupones
+--ventas_descuento
+--ventas_envios
+--ventas_medio_pago
+--ventas_medios_envios
