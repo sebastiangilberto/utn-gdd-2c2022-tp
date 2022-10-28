@@ -196,7 +196,7 @@ CREATE TABLE GAME_OF_JOINS.ventas_envios
 CREATE TABLE GAME_OF_JOINS.medios_envios_habilitados
   ( 
      id      INT IDENTITY(1,1) PRIMARY KEY, 
-     venta_medio_envio DECIMAL(18,0),  --fk
+     id_venta_medio_envio INT,  --fk
      codigo_postal    INT,  --fk
      venta_envio_precio_actual      DECIMAL(18,2), 
 	 tiempo_estimado_envio		   DECIMAL(19,0)
@@ -224,7 +224,8 @@ CREATE TABLE GAME_OF_JOINS.provincias
 
 CREATE TABLE GAME_OF_JOINS.ventas_medios_envios 
   ( 
-	 venta_medio_envio DECIMAL(18,0) PRIMARY KEY,
+   id INT IDENTITY(1,1) PRIMARY KEY,
+	 venta_medio_envio nvarchar(255),
   ) 
 
 CREATE TABLE GAME_OF_JOINS.productos_material 
@@ -351,8 +352,8 @@ ALTER TABLE GAME_OF_JOINS.ventas_descuento
 GO
 
 --ventas_canales 
-ALTER TABLE GAME_OF_JOINS.ventas_canales 
-  ADD CONSTRAINT fk_venta_canales_venta_codigo FOREIGN KEY (venta_codigo) REFERENCES GAME_OF_JOINS.ventas(venta_codigo)
+--ALTER TABLE GAME_OF_JOINS.ventas_canales 
+--  ADD CONSTRAINT fk_venta_canales_venta_codigo FOREIGN KEY (venta_codigo) REFERENCES GAME_OF_JOINS.ventas(venta_codigo)
 
 ALTER TABLE GAME_OF_JOINS.ventas_canales 
   ADD CONSTRAINT fk_venta_canales_id_canal FOREIGN KEY (id_canal) REFERENCES GAME_OF_JOINS.canales(id)
@@ -394,7 +395,7 @@ GO
 
 --medios_envios_habilitados
 ALTER TABLE GAME_OF_JOINS.medios_envios_habilitados 
-  ADD CONSTRAINT fk_medios_envios_habilitados_venta_medio_envio FOREIGN KEY (venta_medio_envio) REFERENCES GAME_OF_JOINS.ventas_medios_envios(venta_medio_envio)
+  ADD CONSTRAINT fk_medios_envios_habilitados_id_venta_medio_envio FOREIGN KEY (id_venta_medio_envio) REFERENCES GAME_OF_JOINS.ventas_medios_envios(id)
 
 ALTER TABLE GAME_OF_JOINS.medios_envios_habilitados
   ADD CONSTRAINT fk_medios_envios_habilitados_codigo_postal FOREIGN KEY (codigo_postal) REFERENCES GAME_OF_JOINS.codigos_postales(id)
@@ -889,6 +890,27 @@ GO
 --variantes_productos
 --ventas
 --ventas_canales
+IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Canales') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Canales 
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Canales
+AS 
+    INSERT INTO GAME_OF_JOINS.ventas_canales
+                (venta_codigo, id_canal, venta_canal_costo) 
+	SELECT
+		DISTINCT m.VENTA_CODIGO,
+		c.id,
+		m.VENTA_CANAL_COSTO
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.canales c ON
+		m.VENTA_CANAL = c.canal
+	WHERE
+		m.VENTA_CODIGO IS NOT NULL
+
+GO
+
 --ventas_cupones
 --ventas_descuento
 --ventas_envios
@@ -914,6 +936,22 @@ AS
 GO
 
 --ventas_medios_envios
+IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medios_Envios') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
+AS 
+    INSERT INTO GAME_OF_JOINS.ventas_medios_envios
+                (venta_medio_envio) 
+	SELECT
+		DISTINCT VENTA_MEDIO_ENVIO
+	FROM
+		gd_esquema.maestra
+	WHERE
+		VENTA_MEDIO_ENVIO IS NOT NULL
+GO
+
 
 ------------------------------------------------
 ------------ Migracion de datos ----------------
@@ -926,6 +964,7 @@ EXEC GAME_OF_JOINS.Migrar_Productos_Material
 EXEC GAME_OF_JOINS.Migrar_Categorias_Productos
 EXEC GAME_OF_JOINS.Migrar_Provincias
 EXEC GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
+EXEC GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
 EXEC GAME_OF_JOINS.Migrar_Tipos_Cupones
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Localidades
@@ -933,5 +972,6 @@ EXEC GAME_OF_JOINS.Migrar_Codigos_Postales
 EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Descuentos
 EXEC GAME_OF_JOINS.Migrar_Productos
+EXEC GAME_OF_JOINS.Migrar_Ventas_Canales
 
 GO
