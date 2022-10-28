@@ -141,7 +141,7 @@ CREATE TABLE GAME_OF_JOINS.clientes
      cliente_telefono       DECIMAL(18,0), 
      cliente_mail       nvarchar(255), 
      cliente_fecha_nac       DATETIME2, 
-     cliente_codigo_postal       DECIMAL(18,0),  --fk
+     cliente_codigo_postal       INT,  --fk
   ) 
 
 CREATE TABLE GAME_OF_JOINS.cupones 
@@ -197,14 +197,15 @@ CREATE TABLE GAME_OF_JOINS.medios_envios_habilitados
   ( 
      id      INT IDENTITY(1,1) PRIMARY KEY, 
      venta_medio_envio DECIMAL(18,0),  --fk
-     codigo_postal    DECIMAL(18,0),  --fk
+     codigo_postal    INT,  --fk
      venta_envio_precio_actual      DECIMAL(18,2), 
 	 tiempo_estimado_envio		   DECIMAL(19,0)
   ) 
 
 CREATE TABLE GAME_OF_JOINS.codigos_postales
   ( 
-     codigo_postal      DECIMAL(18,0) PRIMARY KEY, 
+     id INT IDENTITY(1,1) PRIMARY KEY,
+     codigo_postal      DECIMAL(18,0), 
      id_localidad INT,  --fk
   ) 
 
@@ -314,7 +315,7 @@ CREATE TABLE GAME_OF_JOINS.proveedores
      proveedor_razon_social   nvarchar(50), 
 	 proveedor_domicilio   nvarchar(50),
      proveedor_mail    nvarchar(50), 
-     proveedor_codigo_postal    DECIMAL(18,0),  --fk
+     proveedor_codigo_postal    INT,  --fk
   ) 
 
 -- Regla para nombrar FKs: FK_tabla_origen_nombre_campo 
@@ -372,7 +373,7 @@ GO
 
 --clientes 
 ALTER TABLE GAME_OF_JOINS.clientes 
-  ADD CONSTRAINT fk_clientes_cliente_codigo_postal FOREIGN KEY (cliente_codigo_postal) REFERENCES GAME_OF_JOINS.codigos_postales(codigo_postal) 
+  ADD CONSTRAINT fk_clientes_cliente_codigo_postal FOREIGN KEY (cliente_codigo_postal) REFERENCES GAME_OF_JOINS.codigos_postales(id) 
 
 GO
 
@@ -396,7 +397,7 @@ ALTER TABLE GAME_OF_JOINS.medios_envios_habilitados
   ADD CONSTRAINT fk_medios_envios_habilitados_venta_medio_envio FOREIGN KEY (venta_medio_envio) REFERENCES GAME_OF_JOINS.ventas_medios_envios(venta_medio_envio)
 
 ALTER TABLE GAME_OF_JOINS.medios_envios_habilitados
-  ADD CONSTRAINT fk_medios_envios_habilitados_codigo_postal FOREIGN KEY (codigo_postal) REFERENCES GAME_OF_JOINS.codigos_postales(codigo_postal)
+  ADD CONSTRAINT fk_medios_envios_habilitados_codigo_postal FOREIGN KEY (codigo_postal) REFERENCES GAME_OF_JOINS.codigos_postales(id)
 
 GO
 
@@ -480,7 +481,7 @@ GO
 
 --proveedores
 ALTER TABLE GAME_OF_JOINS.proveedores 
-  ADD CONSTRAINT fk_proveedores_proveedor_codigo_postal FOREIGN KEY (proveedor_codigo_postal) REFERENCES GAME_OF_JOINS.codigos_postales(codigo_postal) 
+  ADD CONSTRAINT fk_proveedores_proveedor_codigo_postal FOREIGN KEY (proveedor_codigo_postal) REFERENCES GAME_OF_JOINS.codigos_postales(id) 
 
 GO
 
@@ -526,9 +527,59 @@ AS
 GO
 --clientes
 --codigos_postales
+IF Object_id('GAME_OF_JOINS.Migrar_Codigos_Postales') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Codigos_Postales 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Codigos_Postales 
+AS 
+    INSERT INTO GAME_OF_JOINS.codigos_postales 
+                (codigo_postal,
+                id_localidad
+                )
+	SELECT
+		DISTINCT m.CLIENTE_CODIGO_POSTAL,
+		l.id
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.localidades l ON
+		m.CLIENTE_LOCALIDAD = l.localidad
+	WHERE
+		m.CLIENTE_CODIGO_POSTAL IS NOT NULL
+	UNION
+	SELECT
+		DISTINCT m.PROVEEDOR_CODIGO_POSTAL,
+		l.id
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.localidades l ON
+		m.PROVEEDOR_LOCALIDAD = l.localidad
+	WHERE
+		m.PROVEEDOR_CODIGO_POSTAL IS NOT NULL
+
+GO
 --compras
 --compras_descuentos
 --compras_medio_pago
+IF Object_id('GAME_OF_JOINS.Migrar_Compras_Medio_Pago') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago 
+
+GO 
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago 
+AS 
+    INSERT INTO GAME_OF_JOINS.compras_medio_pago 
+                (compra_medio_pago) 
+	SELECT
+		DISTINCT COMPRA_MEDIO_PAGO
+	FROM
+		gd_esquema.Maestra
+	WHERE
+		COMPRA_MEDIO_PAGO IS NOT NULL
+
+GO
+
 --cupones
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Cupones
 AS 
@@ -549,6 +600,38 @@ AS
 GO
 --descuentos
 --localidades
+IF Object_id('GAME_OF_JOINS.Migrar_Localidades') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Localidades 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Localidades 
+AS 
+    INSERT INTO GAME_OF_JOINS.localidades 
+                (localidad,
+                id_provincia
+                )
+	SELECT
+		DISTINCT m.PROVEEDOR_LOCALIDAD,
+		p.id
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.provincias p ON
+		m.PROVEEDOR_PROVINCIA = p.provincia
+	WHERE
+		PROVEEDOR_LOCALIDAD IS NOT NULL
+	UNION
+	SELECT
+		DISTINCT CLIENTE_LOCALIDAD,
+		p.id
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.provincias p ON
+		m.CLIENTE_PROVINCIA = p.provincia
+	WHERE
+		CLIENTE_LOCALIDAD IS NOT NULL
+
+GO
 --medios_envios_habilitados
 --medios_pago
 IF Object_id('GAME_OF_JOINS.Migrar_Medio_Pago') IS NOT NULL 
@@ -636,37 +719,58 @@ AS
 GO
 
 --tipos_cupones
+IF Object_id('GAME_OF_JOINS.Migrar_Tipos_Cupones') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones 
+
+GO 
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones
 AS 
     INSERT INTO GAME_OF_JOINS.tipos_cupones
                 (venta_cupon_tipo) 
-	SELECT DISTINCT VENTA_CUPON_TIPO
-	FROM gd_esquema.Maestra WHERE VENTA_CUPON_TIPO IS NOT NULL
+	SELECT
+		DISTINCT VENTA_CUPON_TIPO
+	FROM
+		gd_esquema.Maestra
+	WHERE
+		VENTA_CUPON_TIPO IS NOT NULL
 GO
 --tipos_variantes
+IF Object_id('GAME_OF_JOINS.Migrar_Tipos_Variantes') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Variantes 
+
+GO 
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Variantes
 AS 
     INSERT INTO GAME_OF_JOINS.tipos_variantes
                 (tipo_variante) 
-	SELECT DISTINCT PRODUCTO_TIPO_VARIANTE
-	FROM gd_esquema.Maestra WHERE PRODUCTO_TIPO_VARIANTE IS NOT NULL
+	SELECT
+		DISTINCT PRODUCTO_TIPO_VARIANTE
+	FROM
+		gd_esquema.Maestra
+	WHERE
+		PRODUCTO_TIPO_VARIANTE IS NOT NULL
 GO
 
 EXEC GAME_OF_JOINS.Migrar_Tipos_Variantes
 
 GO
 --variantes
+IF Object_id('GAME_OF_JOINS.Migrar_Variantes') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes 
+
+GO 
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Variantes
 AS 
     INSERT INTO GAME_OF_JOINS.variantes
                 (variante, id_tipo_variante) 
 	(
-		SELECT		DISTINCT 
-					M.PRODUCTO_VARIANTE,
-					TV.id
-		FROM		gd_esquema.Maestra M
-		INNER JOIN	GAME_OF_JOINS.tipos_variantes TV
-		ON			M.PRODUCTO_TIPO_VARIANTE = TV.tipo_variante
+		SELECT
+			DISTINCT M.PRODUCTO_VARIANTE,
+			TV.id
+		FROM
+			gd_esquema.Maestra M
+		INNER JOIN GAME_OF_JOINS.tipos_variantes TV ON
+			M.PRODUCTO_TIPO_VARIANTE = TV.tipo_variante
 	)
 GO
 --variantes_productos
@@ -676,17 +780,22 @@ GO
 --ventas_descuento
 --ventas_envios
 --ventas_medio_pago
+IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medio_Pago') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medio_Pago 
+
+GO 
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
 AS 
     INSERT INTO GAME_OF_JOINS.ventas_medio_pago
                 (venta_medio_pago_costo, id_medio_pago) 
 	(
-		SELECT		DISTINCT
-					VENTA_MEDIO_PAGO_COSTO,
-					MP.id
-		FROM		gd_esquema.Maestra M
-		INNER JOIN	GAME_OF_JOINS.medios_pago MP
-		ON			M.VENTA_MEDIO_PAGO = MP.medio_pago
+		SELECT
+			DISTINCT VENTA_MEDIO_PAGO_COSTO,
+			MP.id
+		FROM
+			gd_esquema.Maestra M
+		INNER JOIN GAME_OF_JOINS.medios_pago MP ON
+			M.VENTA_MEDIO_PAGO = MP.medio_pago
 	)
 
 GO
@@ -705,5 +814,8 @@ EXEC GAME_OF_JOINS.Migrar_Categorias_Productos
 EXEC GAME_OF_JOINS.Migrar_Provincias
 EXEC GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Tipos_Cupones
+EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
+EXEC GAME_OF_JOINS.Migrar_Localidades
+EXEC GAME_OF_JOINS.Migrar_Codigos_Postales
 
 GO
