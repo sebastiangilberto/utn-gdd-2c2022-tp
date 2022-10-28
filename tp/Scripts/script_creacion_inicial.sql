@@ -600,6 +600,31 @@ GO
 ------------ Migracion de datos ----------------
 ------------------------------------------------
 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
+AS 
+    INSERT INTO GAME_OF_JOINS.ventas_medio_pago
+                (venta_medio_pago_costo, id_medio_pago) 
+	(
+		SELECT		DISTINCT
+					VENTA_MEDIO_PAGO_COSTO,
+					MP.id
+		FROM		gd_esquema.Maestra M
+		INNER JOIN	GAME_OF_JOINS.medios_pago MP
+		ON			M.VENTA_MEDIO_PAGO = MP.medio_pago
+	)
+
+GO
+
+EXEC GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
+
+GO
+
+--select * from GAME_OF_JOINS.ventas_medio_pago
+
+------------------------------------------------
+------------ Migracion de datos ----------------
+------------------------------------------------
+
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Provincias
 AS 
     INSERT INTO GAME_OF_JOINS.provincias
@@ -616,3 +641,97 @@ EXEC GAME_OF_JOINS.Migrar_Provincias
 GO
 
 --SELECT * FROM GAME_OF_JOINS.provincias
+
+
+------------------------------------------------------------------------------------------------
+-- NUEVO --
+------------------------------------------------------------------------------------------------
+
+------------------------------------------------
+------------ Migracion de datos ----------------
+------------------------------------------------
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones
+AS 
+    INSERT INTO GAME_OF_JOINS.tipos_cupones
+                (venta_cupon_tipo) 
+	SELECT DISTINCT VENTA_CUPON_TIPO
+	FROM gd_esquema.Maestra WHERE VENTA_CUPON_TIPO IS NOT NULL
+GO
+
+EXEC GAME_OF_JOINS.Migrar_Tipos_Cupones
+
+GO
+
+-- SELECT * FROM GAME_OF_JOINS.tipos_cupones
+
+------------------------------------------------
+------------ Migracion de datos ----------------
+------------------------------------------------
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Cupones
+AS 
+    INSERT INTO GAME_OF_JOINS.cupones
+                (venta_cupon_codigo, venta_cupon_fecha_desde, venta_cupon_fecha_hasta, venta_cupon_valor, id_venta_cupon_tipo) 
+	(	
+		SELECT		DISTINCT 
+					M.VENTA_CUPON_CODIGO,
+					M.VENTA_CUPON_FECHA_DESDE,
+					M.VENTA_CUPON_FECHA_HASTA,
+					M.VENTA_CUPON_VALOR,
+					TP.id
+		FROM		gd_esquema.Maestra M
+		INNER JOIN	GAME_OF_JOINS.tipos_cupones TP
+		ON			M.VENTA_CUPON_TIPO = TP.venta_cupon_tipo
+	)
+
+GO
+
+EXEC GAME_OF_JOINS.Migrar_Cupones
+
+GO
+
+-- SELECT * FROM GAME_OF_JOINS.cupones
+
+------------------------------------------------
+------------ Migracion de datos ----------------
+------------------------------------------------
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Variantes
+AS 
+    INSERT INTO GAME_OF_JOINS.tipos_variantes
+                (tipo_variante) 
+	SELECT DISTINCT PRODUCTO_TIPO_VARIANTE
+	FROM gd_esquema.Maestra WHERE PRODUCTO_TIPO_VARIANTE IS NOT NULL
+GO
+
+EXEC GAME_OF_JOINS.Migrar_Tipos_Variantes
+
+GO
+
+-- SELECT * FROM GAME_OF_JOINS.tipos_variantes
+
+------------------------------------------------
+------------ Migracion de datos ----------------
+------------------------------------------------
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Variantes
+AS 
+    INSERT INTO GAME_OF_JOINS.variantes
+                (variante, id_tipo_variante) 
+	(
+		SELECT		DISTINCT 
+					M.PRODUCTO_VARIANTE,
+					TV.id
+		FROM		gd_esquema.Maestra M
+		INNER JOIN	GAME_OF_JOINS.tipos_variantes TV
+		ON			M.PRODUCTO_TIPO_VARIANTE = TV.tipo_variante
+	)
+GO
+
+EXEC GAME_OF_JOINS.Migrar_Variantes
+
+GO
+
+SELECT * FROM GAME_OF_JOINS.variantes
+
