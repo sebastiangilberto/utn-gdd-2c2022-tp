@@ -707,3 +707,49 @@ EXEC GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Tipos_Cupones
 
 GO
+<<<<<<< HEAD
+=======
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Descuentos
+AS 
+    INSERT INTO GAME_OF_JOINS.descuentos
+                (venta_descuento_concepto, venta_descuento_valor) 
+	(
+		SELECT		DISTINCT 
+					VENTA_DESCUENTO_CONCEPTO,
+					VENTA_DESCUENTO_IMPORTE
+		FROM		gd_esquema.Maestra
+		WHERE		VENTA_DESCUENTO_CONCEPTO IS NOT NULL
+	)
+GO
+
+EXEC GAME_OF_JOINS.Migrar_Descuentos
+
+GO
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos
+AS 
+    INSERT INTO GAME_OF_JOINS.productos
+                (producto_codigo, producto_nombre, producto_descripcion, id_producto_categoria, id_producto_marca, id_producto_material) 
+	(
+		SELECT		DISTINCT
+					M.PRODUCTO_CODIGO,
+					M.PRODUCTO_NOMBRE,
+					M.PRODUCTO_DESCRIPCION,
+					CP.id,
+					PMAR.id,
+					PMAT.id
+		FROM		gd_esquema.Maestra M
+		INNER JOIN	GAME_OF_JOINS.categorias_productos CP
+		ON			M.PRODUCTO_CATEGORIA = CP.producto_categoria
+		INNER JOIN	GAME_OF_JOINS.productos_marcas PMAR
+		ON			M.PRODUCTO_MARCA = PMAR.producto_marca
+		INNER JOIN	GAME_OF_JOINS.productos_material PMAT
+		ON			M.PRODUCTO_MATERIAL = PMAT.producto_material
+	)
+GO
+
+EXEC GAME_OF_JOINS.Migrar_Productos
+
+GO
+>>>>>>> 256ea62 (Agrego SPs)
