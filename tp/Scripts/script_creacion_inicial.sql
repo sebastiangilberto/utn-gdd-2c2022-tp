@@ -647,6 +647,9 @@ AS
 GO
 
 --cupones
+IF Object_id('GAME_OF_JOINS.Migrar_Cupones') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Cupones 
+GO 
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Cupones
 AS 
     INSERT INTO GAME_OF_JOINS.cupones
