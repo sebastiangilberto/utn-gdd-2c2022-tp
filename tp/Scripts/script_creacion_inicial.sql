@@ -965,7 +965,6 @@ GO
 
 EXEC GAME_OF_JOINS.Migrar_Canales
 EXEC GAME_OF_JOINS.Migrar_Medio_Pago
-EXEC GAME_OF_JOINS.Migrar_Clientes
 EXEC GAME_OF_JOINS.Migrar_Productos_Marcas
 EXEC GAME_OF_JOINS.Migrar_Productos_Material
 EXEC GAME_OF_JOINS.Migrar_Categorias_Productos
@@ -981,5 +980,6 @@ EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Descuentos
 EXEC GAME_OF_JOINS.Migrar_Productos
 EXEC GAME_OF_JOINS.Migrar_Ventas_Canales
+EXEC GAME_OF_JOINS.Migrar_Clientes
 
 GO
