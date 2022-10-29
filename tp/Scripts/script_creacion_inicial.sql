@@ -445,8 +445,8 @@ ALTER TABLE GAME_OF_JOINS.productos_compras
 ALTER TABLE GAME_OF_JOINS.productos_compras 
   ADD CONSTRAINT fk_productos_compras_compra_numero FOREIGN KEY (compra_numero) REFERENCES GAME_OF_JOINS.compras(compra_numero) 
 
-ALTER TABLE GAME_OF_JOINS.productos_compras 
-  ADD CONSTRAINT fk_productos_compras_producto_variante_codigo FOREIGN KEY (producto_variante_codigo) REFERENCES GAME_OF_JOINS.variantes_productos(producto_variante_codigo) 
+--ALTER TABLE GAME_OF_JOINS.productos_compras 
+--  ADD CONSTRAINT fk_productos_compras_producto_variante_codigo FOREIGN KEY (producto_variante_codigo) REFERENCES GAME_OF_JOINS.variantes_productos(producto_variante_codigo) 
 
 GO
 
@@ -1095,11 +1095,12 @@ EXEC GAME_OF_JOINS.Migrar_Productos
 EXEC GAME_OF_JOINS.Migrar_Clientes
 EXEC GAME_OF_JOINS.Migrar_Ventas
 EXEC GAME_OF_JOINS.Migrar_Ventas_Canales
+EXEC GAME_OF_JOINS.Migrar_Variantes
 EXEC GAME_OF_JOINS.Migrar_Variantes_Productos
 EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Compras
---EXEC GAME_OF_JOINS.Migrar_Productos_Compras
+EXEC GAME_OF_JOINS.Migrar_Productos_Compras
 
 GO
 
@@ -1123,11 +1124,12 @@ DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Clientes
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Canales
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras
---DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras
 DROP PROCEDURE GAME_OF_JOINS.Erase_All_Foreign_Keys
 DROP PROCEDURE GAME_OF_JOINS.Drop_All_Tables
 
