@@ -602,6 +602,30 @@ AS
 
 GO
 --compras
+IF Object_id('GAME_OF_JOINS.Migrar_Compras') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras 
+
+GO 
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Compras 
+AS 
+    INSERT INTO GAME_OF_JOINS.compras 
+                (compra_numero, compra_fecha, proveedor_cuit, id_compra_medio_pago, compra_total) 
+	SELECT
+		DISTINCT m.COMPRA_NUMERO,
+		m.COMPRA_FECHA,
+		m.PROVEEDOR_CUIT,
+		cmp.id,
+		m.COMPRA_TOTAL
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.compras_medio_pago cmp ON
+		cmp.compra_medio_pago = m.COMPRA_MEDIO_PAGO
+	WHERE
+		m.COMPRA_NUMERO IS NOT NULL
+
+GO
+
 --compras_descuentos
 --compras_medio_pago
 IF Object_id('GAME_OF_JOINS.Migrar_Compras_Medio_Pago') IS NOT NULL 
@@ -804,12 +828,15 @@ AS
 		m.PROVEEDOR_MAIL,
 		cp.id
 	FROM
-		gd_esquema.maestra m
+		gd_esquema.maestra m		
+	INNER JOIN GAME_OF_JOINS.provincias p ON
+		p.provincia = m.PROVEEDOR_PROVINCIA
 	INNER JOIN GAME_OF_JOINS.localidades l ON
 		l.localidad = m.PROVEEDOR_LOCALIDAD
+		AND l.id_provincia = p.id
 	INNER JOIN GAME_OF_JOINS.codigos_postales cp ON
 		cp.id_localidad = l.id
-		AND cp.codigo_postal = m.PROVEEDOR_CODIGO_POSTAL
+		AND cp.codigo_postal = m.PROVEEDOR_CODIGO_POSTAL		
 	WHERE
 		m.PROVEEDOR_CUIT IS NOT NULL
 
@@ -1037,17 +1064,18 @@ EXEC GAME_OF_JOINS.Migrar_Provincias
 EXEC GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
 EXEC GAME_OF_JOINS.Migrar_Tipos_Cupones
-EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Cupones
 EXEC GAME_OF_JOINS.Migrar_Localidades
 EXEC GAME_OF_JOINS.Migrar_Codigos_Postales
-EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Descuentos
 EXEC GAME_OF_JOINS.Migrar_Productos
 EXEC GAME_OF_JOINS.Migrar_Clientes
 EXEC GAME_OF_JOINS.Migrar_Ventas
 EXEC GAME_OF_JOINS.Migrar_Ventas_Canales
 EXEC GAME_OF_JOINS.Migrar_Variantes_Productos
+EXEC GAME_OF_JOINS.Migrar_Proveedores
+EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
+EXEC GAME_OF_JOINS.Migrar_Compras
 
 GO
 
@@ -1063,17 +1091,18 @@ DROP PROCEDURE GAME_OF_JOINS.Migrar_Provincias
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones
-DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Cupones
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Localidades
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Codigos_Postales
-DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Descuentos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Clientes
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Canales
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras
 DROP PROCEDURE GAME_OF_JOINS.Erase_All_Foreign_Keys
 DROP PROCEDURE GAME_OF_JOINS.Drop_All_Tables
 
