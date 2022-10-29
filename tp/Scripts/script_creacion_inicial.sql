@@ -887,7 +887,44 @@ AS
 			M.PRODUCTO_TIPO_VARIANTE = TV.tipo_variante
 	)
 GO
+
 --variantes_productos
+IF Object_id('GAME_OF_JOINS.Migrar_Variantes_Productos') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos 
+
+GO 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
+AS 
+    INSERT INTO GAME_OF_JOINS.variantes_productos
+                (producto_variante_codigo,
+				producto_codigo, 
+				id_variante,
+				stock) 
+	(
+		SELECT
+			DISTINCT M.PRODUCTO_VARIANTE_CODIGO,
+			P.producto_codigo,
+			AUX.id,
+			stock
+		FROM
+			gd_esquema.Maestra M
+		INNER JOIN GAME_OF_JOINS.productos P ON
+			M.PRODUCTO_CODIGO = P.producto_codigo
+		INNER JOIN (SELECT TV.tipo_variante, TV.id FROM GAME_OF_JOINS.tipos_variantes TV
+					INNER JOIN GAME_OF_JOINS.variantes V ON 
+					TV.id = V.id_tipo_variante) as AUX ON
+			AUX.tipo_variante = M.PRODUCTO_TIPO_VARIANTE
+		INNER JOIN (SELECT SUM(PC.compra_producto_cantidad) - SUM(PV.venta_producto_cantidad) AS stock,
+					PC.producto_variante_codigo FROM GAME_OF_JOINS.PRODUCTOS_COMPRAS AS PC
+					INNER JOIN GAME_OF_JOINS.PRODUCTOS_VENTAS AS PV 
+					ON PC.producto_variante_codigo = PV.producto_variante_codigo
+					GROUP BY PC.producto_variante_codigo) as AUX2 ON
+			AUX2.producto_variante_codigo = M.PRODUCTO_VARIANTE_CODIGO
+		WHERE
+			M.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
+	)
+GO
+
 --ventas
 --ventas_canales
 IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Canales') IS NOT NULL 
@@ -973,5 +1010,6 @@ EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Descuentos
 EXEC GAME_OF_JOINS.Migrar_Productos
 EXEC GAME_OF_JOINS.Migrar_Ventas_Canales
+EXEC GAME_OF_JOINS.Migrar_Variantes_Productos
 
 GO
