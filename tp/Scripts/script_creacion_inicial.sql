@@ -654,7 +654,7 @@ GO
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Cupones
 AS 
     INSERT INTO GAME_OF_JOINS.cupones
-                (venta_cupon_codigo, venta_cupon_fecha_desde, venta_cupon_fecha_hasta, venta_cupon_valor, id_venta_cupon_tipo) 
+                (venta_cupon_codigo, venta_cupon_fecha_desde, venta_cupon_fecha_hasta, venta_cupon_valor, id_tipo_cupon) 
 	(	
 		SELECT		DISTINCT 
 					M.VENTA_CUPON_CODIGO,
@@ -664,7 +664,7 @@ AS
 					TP.id
 		FROM		gd_esquema.Maestra M
 		INNER JOIN	GAME_OF_JOINS.tipos_cupones TP
-		ON			M.VENTA_CUPON_TIPO = TP.venta_cupon_tipo
+		ON			M.VENTA_CUPON_TIPO = TP.tipo_cupon
 	)
 
 GO
@@ -767,6 +767,29 @@ AS
 	)
 GO
 --productos_compras
+--productos_compras
+IF Object_id('GAME_OF_JOINS.Migrar_Productos_Compras') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras 
+
+GO 
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras
+AS 
+    INSERT INTO GAME_OF_JOINS.productos_compras 
+                (producto_codigo, compra_numero, producto_variante_codigo, compra_producto_cantidad, compra_producto_precio, compra_total)
+	SELECT
+		DISTINCT PRODUCTO_CODIGO,
+		COMPRA_NUMERO,
+		PRODUCTO_VARIANTE_CODIGO,
+		COMPRA_PRODUCTO_CANTIDAD,
+		COMPRA_PRODUCTO_PRECIO,
+		COMPRA_TOTAL
+	FROM
+		gd_esquema.maestra
+	WHERE
+		COMPRA_NUMERO IS NOT NULL AND PRODUCTO_CODIGO IS NOT NULL
+
+GO
 --productos_marcas
 IF Object_id('GAME_OF_JOINS.Migrar_Productos_Marcas') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Marcas 
@@ -874,7 +897,7 @@ GO
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones
 AS 
     INSERT INTO GAME_OF_JOINS.tipos_cupones
-                (venta_cupon_tipo) 
+                (tipo_cupon) 
 	SELECT
 		DISTINCT VENTA_CUPON_TIPO
 	FROM
@@ -1076,6 +1099,7 @@ EXEC GAME_OF_JOINS.Migrar_Variantes_Productos
 EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Compras
+--EXEC GAME_OF_JOINS.Migrar_Productos_Compras
 
 GO
 
@@ -1103,6 +1127,7 @@ DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras
+--DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras
 DROP PROCEDURE GAME_OF_JOINS.Erase_All_Foreign_Keys
 DROP PROCEDURE GAME_OF_JOINS.Drop_All_Tables
 
