@@ -418,8 +418,8 @@ ALTER TABLE GAME_OF_JOINS.productos_ventas
 ALTER TABLE GAME_OF_JOINS.productos_ventas 
   ADD CONSTRAINT fk_productos_ventas_venta_codigo FOREIGN KEY (venta_codigo) REFERENCES GAME_OF_JOINS.ventas(venta_codigo) 
 
-ALTER TABLE GAME_OF_JOINS.productos_ventas 
-  ADD CONSTRAINT fk_productos_ventas_producto_variante_codigo FOREIGN KEY (producto_variante_codigo) REFERENCES GAME_OF_JOINS.variantes_productos(producto_variante_codigo) 
+--ALTER TABLE GAME_OF_JOINS.productos_ventas 
+--  ADD CONSTRAINT fk_productos_ventas_producto_variante_codigo FOREIGN KEY (producto_variante_codigo) REFERENCES GAME_OF_JOINS.variantes_productos(producto_variante_codigo) 
 
 GO
 
@@ -783,11 +783,12 @@ AS
 		PRODUCTO_VARIANTE_CODIGO,
 		COMPRA_PRODUCTO_CANTIDAD,
 		COMPRA_PRODUCTO_PRECIO,
-		COMPRA_TOTAL
+		COMPRA_PRODUCTO_CANTIDAD * COMPRA_PRODUCTO_PRECIO
 	FROM
 		gd_esquema.maestra
 	WHERE
-		COMPRA_NUMERO IS NOT NULL AND PRODUCTO_CODIGO IS NOT NULL
+		COMPRA_NUMERO IS NOT NULL
+		AND PRODUCTO_CODIGO IS NOT NULL
 
 GO
 --productos_marcas
@@ -829,6 +830,37 @@ AS
 
 GO
 --productos_ventas
+IF Object_id('GAME_OF_JOINS.Migrar_Productos_Ventas') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Ventas 
+
+GO 
+
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos_Ventas 
+AS 
+    INSERT INTO GAME_OF_JOINS.productos_ventas 
+                (venta_codigo,
+                producto_codigo,
+                producto_variante_codigo,
+                venta_producto_cantidad,
+                venta_producto_precio,
+                venta_producto_total
+                ) 
+	SELECT
+		DISTINCT
+		VENTA_CODIGO,
+		PRODUCTO_CODIGO,
+		PRODUCTO_VARIANTE_CODIGO,
+		VENTA_PRODUCTO_CANTIDAD,
+		VENTA_PRODUCTO_PRECIO,
+		VENTA_PRODUCTO_CANTIDAD * VENTA_PRODUCTO_PRECIO as vendido
+	FROM
+		gd_esquema.maestra
+	WHERE
+		VENTA_CODIGO IS NOT NULL
+		AND PRODUCTO_CODIGO IS NOT NULL
+
+GO
+
 --proveedores
 IF Object_id('GAME_OF_JOINS.Migrar_Proveedores') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores 
@@ -1101,6 +1133,7 @@ EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Compras
 EXEC GAME_OF_JOINS.Migrar_Productos_Compras
+EXEC GAME_OF_JOINS.Migrar_Productos_Ventas
 
 GO
 
@@ -1130,6 +1163,7 @@ DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Ventas
 DROP PROCEDURE GAME_OF_JOINS.Erase_All_Foreign_Keys
 DROP PROCEDURE GAME_OF_JOINS.Drop_All_Tables
 
