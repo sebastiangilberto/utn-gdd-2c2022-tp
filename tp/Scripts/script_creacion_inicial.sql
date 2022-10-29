@@ -87,10 +87,8 @@ CREATE TABLE GAME_OF_JOINS.ventas
      venta_codigo DECIMAL(19,0) PRIMARY KEY, 
      venta_fecha    DATETIME2, 
      id_cliente INT, --fk
-     id_canal_venta       INT,  --fk    
      venta_total     DECIMAL(18,2), 
      id_venta_medio_pago   INT,  --fk
-	 id_venta_medio_envio		   INT, --fk
   )  
 
 CREATE TABLE GAME_OF_JOINS.ventas_medio_pago 
@@ -327,13 +325,7 @@ ALTER TABLE GAME_OF_JOINS.ventas
   ADD CONSTRAINT fk_ventas_id_cliente FOREIGN KEY (id_cliente) REFERENCES GAME_OF_JOINS.clientes(id) 
 
 ALTER TABLE GAME_OF_JOINS.ventas 
-  ADD CONSTRAINT fk_ventas_id_canal_venta FOREIGN KEY (id_canal_venta) REFERENCES GAME_OF_JOINS.ventas_canales(id) 
-
-ALTER TABLE GAME_OF_JOINS.ventas 
   ADD CONSTRAINT fk_ventas_id_venta_medio_pago FOREIGN KEY (id_venta_medio_pago) REFERENCES GAME_OF_JOINS.ventas_medio_pago(id) 
-
-ALTER TABLE GAME_OF_JOINS.ventas 
-  ADD CONSTRAINT fk_ventas_id_venta_medio_envio FOREIGN KEY (id_venta_medio_envio) REFERENCES GAME_OF_JOINS.ventas_envios(id) 
 
 GO
 
