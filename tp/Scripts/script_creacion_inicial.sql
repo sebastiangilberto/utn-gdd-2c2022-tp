@@ -86,7 +86,7 @@ CREATE TABLE GAME_OF_JOINS.ventas
   ( 
      venta_codigo DECIMAL(19,0) PRIMARY KEY, 
      venta_fecha    DATETIME2, 
-     cliente_dni     DECIMAL(18,0), --fk
+     id_cliente INT, --fk
      id_canal_venta       INT,  --fk    
      venta_total     DECIMAL(18,2), 
      id_venta_medio_pago   INT,  --fk
@@ -134,7 +134,8 @@ CREATE TABLE GAME_OF_JOINS.ventas_cupones
 
 CREATE TABLE GAME_OF_JOINS.clientes 
   ( 
-     cliente_dni DECIMAL(18,0) PRIMARY KEY, 
+  	id INT IDENTITY(1,1) PRIMARY KEY,
+     cliente_dni DECIMAL(18,0), 
      cliente_apellido nvarchar(255), 
      cliente_nombre         nvarchar(255), 
      cliente_direccion    nvarchar(255), 
@@ -323,7 +324,7 @@ CREATE TABLE GAME_OF_JOINS.proveedores
 
 --ventas 
 ALTER TABLE GAME_OF_JOINS.ventas 
-  ADD CONSTRAINT fk_ventas_cliente_dni FOREIGN KEY (cliente_dni) REFERENCES GAME_OF_JOINS.clientes(cliente_dni) 
+  ADD CONSTRAINT fk_ventas_id_cliente FOREIGN KEY (id_cliente) REFERENCES GAME_OF_JOINS.clientes(id) 
 
 ALTER TABLE GAME_OF_JOINS.ventas 
   ADD CONSTRAINT fk_ventas_id_canal_venta FOREIGN KEY (id_canal_venta) REFERENCES GAME_OF_JOINS.ventas_canales(id) 
@@ -532,7 +533,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Clientes') IS NOT NULL
 
 GO 
 
-CREATE PROCEDURE GAME_OF_JOINS.Migrar_Clientes 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Clientes 
 AS 
     INSERT INTO GAME_OF_JOINS.clientes 
                 (cliente_dni,
@@ -555,8 +556,11 @@ AS
 		cp.id
 	FROM
 		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.provincias p ON
+		p.provincia = m.CLIENTE_PROVINCIA
 	INNER JOIN GAME_OF_JOINS.localidades l ON
 		l.localidad = m.CLIENTE_LOCALIDAD
+		AND l.id_provincia = p.id
 	INNER JOIN GAME_OF_JOINS.codigos_postales cp ON
 		cp.id_localidad = l.id
 		AND cp.codigo_postal = m.CLIENTE_CODIGO_POSTAL
@@ -577,6 +581,7 @@ AS
                 (codigo_postal,
                 id_localidad
                 )
+    (
 	SELECT
 		DISTINCT m.CLIENTE_CODIGO_POSTAL,
 		l.id
@@ -596,6 +601,7 @@ AS
 		m.PROVEEDOR_LOCALIDAD = l.localidad
 	WHERE
 		m.PROVEEDOR_CODIGO_POSTAL IS NOT NULL
+	)
 
 GO
 --compras
@@ -959,6 +965,7 @@ GO
 
 EXEC GAME_OF_JOINS.Migrar_Canales
 EXEC GAME_OF_JOINS.Migrar_Medio_Pago
+EXEC GAME_OF_JOINS.Migrar_Clientes
 EXEC GAME_OF_JOINS.Migrar_Productos_Marcas
 EXEC GAME_OF_JOINS.Migrar_Productos_Material
 EXEC GAME_OF_JOINS.Migrar_Categorias_Productos
@@ -967,6 +974,7 @@ EXEC GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
 EXEC GAME_OF_JOINS.Migrar_Tipos_Cupones
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
+EXEC GAME_OF_JOINS.Migrar_Cupones
 EXEC GAME_OF_JOINS.Migrar_Localidades
 EXEC GAME_OF_JOINS.Migrar_Codigos_Postales
 EXEC GAME_OF_JOINS.Migrar_Proveedores
