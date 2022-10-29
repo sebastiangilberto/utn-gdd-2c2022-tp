@@ -161,7 +161,7 @@ CREATE TABLE GAME_OF_JOINS.canales
 CREATE TABLE GAME_OF_JOINS.descuentos
   ( 
      id      INT IDENTITY(1,1) PRIMARY KEY, 
-     venta_descuento_concepto DECIMAL(18,0), 
+     venta_descuento_concepto nvarchar(255), 
      venta_descuento_valor    DECIMAL(18,2), 
   ) 
   
