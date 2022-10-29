@@ -161,7 +161,7 @@ CREATE TABLE GAME_OF_JOINS.canales
 CREATE TABLE GAME_OF_JOINS.descuentos
   ( 
      id      INT IDENTITY(1,1) PRIMARY KEY, 
-     venta_descuento_concepto DECIMAL(18,0), 
+     venta_descuento_concepto nvarchar(255), 
      venta_descuento_valor    DECIMAL(18,2), 
   ) 
   
@@ -650,6 +650,7 @@ GO
 IF Object_id('GAME_OF_JOINS.Migrar_Cupones') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Cupones 
 GO 
+
 CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Cupones
 AS 
     INSERT INTO GAME_OF_JOINS.cupones
