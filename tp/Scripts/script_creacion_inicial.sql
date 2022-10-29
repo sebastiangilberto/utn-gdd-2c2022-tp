@@ -149,7 +149,7 @@ CREATE TABLE GAME_OF_JOINS.cupones
      venta_cupon_fecha_desde         DATETIME2, 
      venta_cupon_fecha_hasta         DATETIME2, 
      venta_cupon_valor        DECIMAL(18,2), 
-     id_venta_cupon_tipo INT,  --fk
+     id_tipo_cupon INT,  --fk
   ) 
 
 CREATE TABLE GAME_OF_JOINS.canales
@@ -168,7 +168,7 @@ CREATE TABLE GAME_OF_JOINS.descuentos
   CREATE TABLE GAME_OF_JOINS.tipos_cupones
   ( 
      id      INT IDENTITY(1,1) PRIMARY KEY, 
-     venta_cupon_tipo nvarchar(50), 
+     tipo_cupon nvarchar(50), 
   ) 
 
 CREATE TABLE GAME_OF_JOINS.variantes
@@ -377,7 +377,7 @@ GO
 
 --cupones
 ALTER TABLE GAME_OF_JOINS.cupones 
-  ADD CONSTRAINT fk_cupones_id_venta_cupon_tipo FOREIGN KEY (id_venta_cupon_tipo) REFERENCES GAME_OF_JOINS.tipos_cupones(id)
+  ADD CONSTRAINT fk_cupones_id_tipo_cupon FOREIGN KEY (id_tipo_cupon) REFERENCES GAME_OF_JOINS.tipos_cupones(id)
 
 GO
 
