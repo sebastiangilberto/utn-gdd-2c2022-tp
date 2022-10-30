@@ -721,6 +721,44 @@ AS
 
 GO
 --medios_envios_habilitados
+IF Object_id('GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados 
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados
+AS 
+    INSERT INTO GAME_OF_JOINS.medios_envios_habilitados
+                (id_venta_medio_envio, codigo_postal, venta_envio_precio_actual, tiempo_estimado_envio) 
+	SELECT
+		DISTINCT me.id,
+		cp.id as codigo_postal,
+		(
+		SELECT
+			MAX(m1.VENTA_ENVIO_PRECIO)
+		FROM
+			gd_esquema.maestra m1
+		WHERE
+			m1.VENTA_MEDIO_ENVIO = m.VENTA_MEDIO_ENVIO
+			AND m1.CLIENTE_CODIGO_POSTAL = m.CLIENTE_CODIGO_POSTAL
+			AND m1.CLIENTE_LOCALIDAD = m.CLIENTE_LOCALIDAD
+			AND m1.CLIENTE_PROVINCIA = m.CLIENTE_PROVINCIA ) as precio_actual,
+		1 as tiempo_estimado_envio
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.ventas_medios_envios me ON
+		me.venta_medio_envio = m.VENTA_MEDIO_ENVIO
+	INNER JOIN GAME_OF_JOINS.provincias p ON
+		p.provincia = m.CLIENTE_PROVINCIA
+	INNER JOIN GAME_OF_JOINS.localidades l ON
+		l.localidad = m.CLIENTE_LOCALIDAD
+		AND l.id_provincia = p.id
+	INNER JOIN GAME_OF_JOINS.codigos_postales cp ON
+		cp.id_localidad = l.id
+		AND cp.codigo_postal = m.CLIENTE_CODIGO_POSTAL
+	WHERE
+		m.VENTA_MEDIO_ENVIO IS NOT NULL
+GO
+	
 --medios_pago
 IF Object_id('GAME_OF_JOINS.Migrar_Medio_Pago') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Medio_Pago 
