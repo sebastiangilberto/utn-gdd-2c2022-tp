@@ -1202,6 +1202,7 @@ EXEC GAME_OF_JOINS.Migrar_Tipos_Cupones
 EXEC GAME_OF_JOINS.Migrar_Cupones
 EXEC GAME_OF_JOINS.Migrar_Localidades
 EXEC GAME_OF_JOINS.Migrar_Codigos_Postales
+EXEC GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados
 EXEC GAME_OF_JOINS.Migrar_Descuentos
 EXEC GAME_OF_JOINS.Migrar_Productos
 EXEC GAME_OF_JOINS.Migrar_Clientes
@@ -1233,6 +1234,7 @@ DROP PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Cupones
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Localidades
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Codigos_Postales
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Descuentos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Clientes
