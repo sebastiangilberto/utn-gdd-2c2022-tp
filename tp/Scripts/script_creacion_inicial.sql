@@ -261,7 +261,7 @@ CREATE TABLE GAME_OF_JOINS.variantes_productos
 	 producto_variante_codigo nvarchar(50) PRIMARY KEY,
      producto_codigo    nvarchar(50),  --fk
 	 id_variante   INT, --fk
-     variante_producto_precio    DECIMAL(18,2),
+     variante_producto_precio    DECIMAL(18,2) DEFAULT 0,
      stock INT NOT NULL, 
   ) 
 
@@ -994,21 +994,24 @@ AS
 			DISTINCT M.PRODUCTO_VARIANTE_CODIGO,
 			P.producto_codigo,
 			AUX.id,
-			stock
+			AUX3.stock
 		FROM
 			gd_esquema.Maestra M
 		INNER JOIN GAME_OF_JOINS.productos P ON
 			M.PRODUCTO_CODIGO = P.producto_codigo
-		INNER JOIN (SELECT TV.tipo_variante, TV.id FROM GAME_OF_JOINS.tipos_variantes TV
+		INNER JOIN (SELECT DISTINCT TV.id, TV.tipo_variante FROM GAME_OF_JOINS.tipos_variantes TV
 					INNER JOIN GAME_OF_JOINS.variantes V ON 
 					TV.id = V.id_tipo_variante) as AUX ON
 			AUX.tipo_variante = M.PRODUCTO_TIPO_VARIANTE
-		INNER JOIN (SELECT SUM(PC.compra_producto_cantidad) - SUM(PV.venta_producto_cantidad) AS stock,
-					PC.producto_variante_codigo FROM GAME_OF_JOINS.PRODUCTOS_COMPRAS AS PC
-					INNER JOIN GAME_OF_JOINS.PRODUCTOS_VENTAS AS PV 
-					ON PC.producto_variante_codigo = PV.producto_variante_codigo
-					GROUP BY PC.producto_variante_codigo) as AUX2 ON
-			AUX2.producto_variante_codigo = M.PRODUCTO_VARIANTE_CODIGO
+		INNER JOIN (select PC.producto_variante_codigo, SUM(PC.compra_producto_cantidad) - AUX2.stock_ventas as stock 
+					from GD2C2022.GAME_OF_JOINS.PRODUCTOS_COMPRAS PC
+					LEFT JOIN (select PV.producto_variante_codigo, PV.producto_codigo, SUM(PV.venta_producto_cantidad) as stock_ventas 
+								from GD2C2022.GAME_OF_JOINS.PRODUCTOS_VENTAS PV
+								GROUP BY PV.producto_variante_codigo, PV.producto_codigo) AS AUX2 ON 
+								PC.producto_variante_codigo = AUX2.producto_variante_codigo 
+								and PC.producto_codigo = AUX2.producto_codigo
+								GROUP BY PC.producto_variante_codigo, AUX2.stock_ventas) as AUX3 ON
+			AUX3.producto_variante_codigo = M.PRODUCTO_VARIANTE_CODIGO
 		WHERE
 			M.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
 	)
@@ -1128,12 +1131,12 @@ EXEC GAME_OF_JOINS.Migrar_Clientes
 EXEC GAME_OF_JOINS.Migrar_Ventas
 EXEC GAME_OF_JOINS.Migrar_Ventas_Canales
 EXEC GAME_OF_JOINS.Migrar_Variantes
-EXEC GAME_OF_JOINS.Migrar_Variantes_Productos
 EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Compras
 EXEC GAME_OF_JOINS.Migrar_Productos_Compras
 EXEC GAME_OF_JOINS.Migrar_Productos_Ventas
+EXEC GAME_OF_JOINS.Migrar_Variantes_Productos
 
 GO
 
