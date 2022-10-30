@@ -766,7 +766,7 @@ AS
 			M.PRODUCTO_MATERIAL = PMAT.producto_material
 	)
 GO
---productos_compras
+
 --productos_compras
 IF Object_id('GAME_OF_JOINS.Migrar_Productos_Compras') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras 
@@ -989,37 +989,48 @@ AS
 				producto_codigo, 
 				id_variante,
 				stock) 
-    SELECT
-      DISTINCT m.PRODUCTO_VARIANTE_CODIGO,
-      m.PRODUCTO_CODIGO,
-      v.id as id_variante,
-      ( (
-      select
-        sum(COMPRA_PRODUCTO_CANTIDAD)
-      FROM
-        gd_esquema.maestra m2
-      where
-        PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
-        AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
-        AND COMPRA_NUMERO IS NOT NULL ) - (
-      select
-        sum(VENTA_PRODUCTO_CANTIDAD)
-      FROM
-        gd_esquema.maestra m3
-      WHERE
-        PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
-        AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
-        AND VENTA_CODIGO IS NOT NULL ) ) as stock
-    FROM
-      gd_esquema.maestra m
-    INNER JOIN GAME_OF_JOINS.tipos_variantes tv ON
-      tv.tipo_variante = m.PRODUCTO_TIPO_VARIANTE
-    INNER JOIN GAME_OF_JOINS.variantes v ON
-      v.id_tipo_variante = tv.id
-      AND v.variante = m.PRODUCTO_VARIANTE
-    WHERE
-      m.PRODUCTO_CODIGO IS NOT NULL
-      AND m.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
+	SELECT
+		DISTINCT m.PRODUCTO_VARIANTE_CODIGO,
+		m.PRODUCTO_CODIGO,
+		(
+		SELECT
+			CASE
+				WHEN MAX(m1.VENTA_PRODUCTO_PRECIO) > MAX(m1.COMPRA_PRODUCTO_PRECIO) THEN MAX(m1.VENTA_PRODUCTO_PRECIO)
+				ELSE MAX(m1.COMPRA_PRODUCTO_PRECIO)
+			END AS precio_actual
+		FROM
+			gd_esquema.maestra m1
+		WHERE
+			m1.PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
+			AND m1.PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO ) precio_actual,
+		v.id as id_variante,
+		( (
+		select
+			sum(COMPRA_PRODUCTO_CANTIDAD)
+		FROM
+			gd_esquema.maestra m2
+		where
+			PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
+			AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
+			AND COMPRA_NUMERO IS NOT NULL ) - (
+		select
+			sum(VENTA_PRODUCTO_CANTIDAD)
+		FROM
+			gd_esquema.maestra m3
+		WHERE
+			PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
+			AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
+			AND VENTA_CODIGO IS NOT NULL ) ) as stock
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.tipos_variantes tv ON
+		tv.tipo_variante = m.PRODUCTO_TIPO_VARIANTE
+	INNER JOIN GAME_OF_JOINS.variantes v ON
+		v.id_tipo_variante = tv.id
+		AND v.variante = m.PRODUCTO_VARIANTE
+	WHERE
+		m.PRODUCTO_CODIGO IS NOT NULL
+		AND m.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
 GO
 
 --ventas
