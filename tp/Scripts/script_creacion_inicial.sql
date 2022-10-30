@@ -261,7 +261,7 @@ CREATE TABLE GAME_OF_JOINS.variantes_productos
 	 producto_variante_codigo nvarchar(50) PRIMARY KEY,
      producto_codigo    nvarchar(50),  --fk
 	 id_variante   INT, --fk
-     variante_producto_precio    DECIMAL(18,2) DEFAULT 0,
+     precio_actual    DECIMAL(18,2),
      stock INT NOT NULL, 
   ) 
 
@@ -778,7 +778,7 @@ AS
     INSERT INTO GAME_OF_JOINS.productos_compras 
                 (producto_codigo, compra_numero, producto_variante_codigo, compra_producto_cantidad, compra_producto_precio, compra_total)
 	SELECT
-		DISTINCT PRODUCTO_CODIGO,
+		PRODUCTO_CODIGO,
 		COMPRA_NUMERO,
 		PRODUCTO_VARIANTE_CODIGO,
 		COMPRA_PRODUCTO_CANTIDAD,
@@ -846,7 +846,6 @@ AS
                 venta_producto_total
                 ) 
 	SELECT
-		DISTINCT
 		VENTA_CODIGO,
 		PRODUCTO_CODIGO,
 		PRODUCTO_VARIANTE_CODIGO,
@@ -988,10 +987,12 @@ AS
                 (producto_variante_codigo,
 				producto_codigo, 
 				id_variante,
+				precio_actual,
 				stock) 
 	SELECT
 		DISTINCT m.PRODUCTO_VARIANTE_CODIGO,
 		m.PRODUCTO_CODIGO,
+		v.id as id_variante,
 		(
 		SELECT
 			CASE
@@ -1003,7 +1004,6 @@ AS
 		WHERE
 			m1.PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
 			AND m1.PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO ) precio_actual,
-		v.id as id_variante,
 		( (
 		select
 			sum(COMPRA_PRODUCTO_CANTIDAD)
