@@ -1146,6 +1146,23 @@ AS
 GO
 
 --ventas_descuento
+IF Objectid('GAME_OF_JOINS.Migrar_Ventas_Descuento') IS NOT NULL
+	DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
+AS
+	INSERT INTO GAME_OF_JOINS.ventas_descuento
+		SELECT 
+			DISTINCT VENTA_CODIGO,
+			VENTA_DESCUENTO_IMPORTE,
+			dtos.id
+		FROM gd_esquema.maestra m
+		INNER JOIN GAME_OF_JOINS.descuentos dtos 
+			ON m.VENTA_DESCUENTO_IMPORTE = dtos.venta_descuento_valor
+			AND m.VENTA_DESCUENTO_CONCEPTO = dtos.venta_descuento_concepto
+		WHERE m.VENTA_CODIGO IS NOT NULL
+GO
 --ventas_envios
 --ventas_medio_pago
 IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medio_Pago') IS NOT NULL 
