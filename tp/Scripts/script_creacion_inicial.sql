@@ -989,32 +989,37 @@ AS
 				producto_codigo, 
 				id_variante,
 				stock) 
-	(
-		SELECT
-			DISTINCT M.PRODUCTO_VARIANTE_CODIGO,
-			P.producto_codigo,
-			AUX.id,
-			AUX3.stock
-		FROM
-			gd_esquema.Maestra M
-		INNER JOIN GAME_OF_JOINS.productos P ON
-			M.PRODUCTO_CODIGO = P.producto_codigo
-		INNER JOIN (SELECT DISTINCT TV.id, TV.tipo_variante FROM GAME_OF_JOINS.tipos_variantes TV
-					INNER JOIN GAME_OF_JOINS.variantes V ON 
-					TV.id = V.id_tipo_variante) as AUX ON
-			AUX.tipo_variante = M.PRODUCTO_TIPO_VARIANTE
-		INNER JOIN (select PC.producto_variante_codigo, SUM(PC.compra_producto_cantidad) - AUX2.stock_ventas as stock 
-					from GD2C2022.GAME_OF_JOINS.PRODUCTOS_COMPRAS PC
-					LEFT JOIN (select PV.producto_variante_codigo, PV.producto_codigo, SUM(PV.venta_producto_cantidad) as stock_ventas 
-								from GD2C2022.GAME_OF_JOINS.PRODUCTOS_VENTAS PV
-								GROUP BY PV.producto_variante_codigo, PV.producto_codigo) AS AUX2 ON 
-								PC.producto_variante_codigo = AUX2.producto_variante_codigo 
-								and PC.producto_codigo = AUX2.producto_codigo
-								GROUP BY PC.producto_variante_codigo, AUX2.stock_ventas) as AUX3 ON
-			AUX3.producto_variante_codigo = M.PRODUCTO_VARIANTE_CODIGO
-		WHERE
-			M.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
-	)
+    SELECT
+      DISTINCT m.PRODUCTO_VARIANTE_CODIGO,
+      m.PRODUCTO_CODIGO,
+      v.id as id_variante,
+      ( (
+      select
+        sum(COMPRA_PRODUCTO_CANTIDAD)
+      FROM
+        gd_esquema.maestra m2
+      where
+        PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
+        AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
+        AND COMPRA_NUMERO IS NOT NULL ) - (
+      select
+        sum(VENTA_PRODUCTO_CANTIDAD)
+      FROM
+        gd_esquema.maestra m3
+      WHERE
+        PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
+        AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
+        AND VENTA_CODIGO IS NOT NULL ) ) as stock
+    FROM
+      gd_esquema.maestra m
+    INNER JOIN GAME_OF_JOINS.tipos_variantes tv ON
+      tv.tipo_variante = m.PRODUCTO_TIPO_VARIANTE
+    INNER JOIN GAME_OF_JOINS.variantes v ON
+      v.id_tipo_variante = tv.id
+      AND v.variante = m.PRODUCTO_VARIANTE
+    WHERE
+      m.PRODUCTO_CODIGO IS NOT NULL
+      AND m.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
 GO
 
 --ventas
