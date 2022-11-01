@@ -8,7 +8,7 @@ IF NOT EXISTS (SELECT *
                FROM   sys.schemas 
                WHERE  name = 'GAME_OF_JOINS') 
   BEGIN 
-      EXEC ('CREATE SCHEMA [GAME_OF_JOINS] AUTHORIZATION dbo') 
+      EXEC ('CREATE SCHEMA [GAME_OF_JOINS] AUTHORIZATION dbo')
   END 
 
 GO
@@ -261,7 +261,7 @@ CREATE TABLE GAME_OF_JOINS.variantes_productos
 	 producto_variante_codigo nvarchar(50) PRIMARY KEY,
      producto_codigo    nvarchar(50),  --fk
 	 id_variante   INT, --fk
-     variante_producto_precio    DECIMAL(18,2) DEFAULT 0,
+     precio_actual    DECIMAL(18,2),
      stock INT NOT NULL, 
   ) 
 
@@ -721,6 +721,44 @@ AS
 
 GO
 --medios_envios_habilitados
+IF Object_id('GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados 
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados
+AS 
+    INSERT INTO GAME_OF_JOINS.medios_envios_habilitados
+                (id_venta_medio_envio, codigo_postal, venta_envio_precio_actual, tiempo_estimado_envio) 
+	SELECT
+		DISTINCT me.id,
+		cp.id as codigo_postal,
+		(
+		SELECT
+			MAX(m1.VENTA_ENVIO_PRECIO)
+		FROM
+			gd_esquema.maestra m1
+		WHERE
+			m1.VENTA_MEDIO_ENVIO = m.VENTA_MEDIO_ENVIO
+			AND m1.CLIENTE_CODIGO_POSTAL = m.CLIENTE_CODIGO_POSTAL
+			AND m1.CLIENTE_LOCALIDAD = m.CLIENTE_LOCALIDAD
+			AND m1.CLIENTE_PROVINCIA = m.CLIENTE_PROVINCIA ) as precio_actual,
+		1 as tiempo_estimado_envio
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.ventas_medios_envios me ON
+		me.venta_medio_envio = m.VENTA_MEDIO_ENVIO
+	INNER JOIN GAME_OF_JOINS.provincias p ON
+		p.provincia = m.CLIENTE_PROVINCIA
+	INNER JOIN GAME_OF_JOINS.localidades l ON
+		l.localidad = m.CLIENTE_LOCALIDAD
+		AND l.id_provincia = p.id
+	INNER JOIN GAME_OF_JOINS.codigos_postales cp ON
+		cp.id_localidad = l.id
+		AND cp.codigo_postal = m.CLIENTE_CODIGO_POSTAL
+	WHERE
+		m.VENTA_MEDIO_ENVIO IS NOT NULL
+GO
+	
 --medios_pago
 IF Object_id('GAME_OF_JOINS.Migrar_Medio_Pago') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Medio_Pago 
@@ -766,7 +804,7 @@ AS
 			M.PRODUCTO_MATERIAL = PMAT.producto_material
 	)
 GO
---productos_compras
+
 --productos_compras
 IF Object_id('GAME_OF_JOINS.Migrar_Productos_Compras') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras 
@@ -778,7 +816,7 @@ AS
     INSERT INTO GAME_OF_JOINS.productos_compras 
                 (producto_codigo, compra_numero, producto_variante_codigo, compra_producto_cantidad, compra_producto_precio, compra_total)
 	SELECT
-		DISTINCT PRODUCTO_CODIGO,
+		PRODUCTO_CODIGO,
 		COMPRA_NUMERO,
 		PRODUCTO_VARIANTE_CODIGO,
 		COMPRA_PRODUCTO_CANTIDAD,
@@ -846,7 +884,6 @@ AS
                 venta_producto_total
                 ) 
 	SELECT
-		DISTINCT
 		VENTA_CODIGO,
 		PRODUCTO_CODIGO,
 		PRODUCTO_VARIANTE_CODIGO,
@@ -988,33 +1025,50 @@ AS
                 (producto_variante_codigo,
 				producto_codigo, 
 				id_variante,
+				precio_actual,
 				stock) 
-	(
+	SELECT
+		DISTINCT m.PRODUCTO_VARIANTE_CODIGO,
+		m.PRODUCTO_CODIGO,
+		v.id as id_variante,
+		(
 		SELECT
-			DISTINCT M.PRODUCTO_VARIANTE_CODIGO,
-			P.producto_codigo,
-			AUX.id,
-			AUX3.stock
+			CASE
+				WHEN MAX(m1.VENTA_PRODUCTO_PRECIO) > MAX(m1.COMPRA_PRODUCTO_PRECIO) THEN MAX(m1.VENTA_PRODUCTO_PRECIO)
+				ELSE MAX(m1.COMPRA_PRODUCTO_PRECIO)
+			END AS precio_actual
 		FROM
-			gd_esquema.Maestra M
-		INNER JOIN GAME_OF_JOINS.productos P ON
-			M.PRODUCTO_CODIGO = P.producto_codigo
-		INNER JOIN (SELECT DISTINCT TV.id, TV.tipo_variante FROM GAME_OF_JOINS.tipos_variantes TV
-					INNER JOIN GAME_OF_JOINS.variantes V ON 
-					TV.id = V.id_tipo_variante) as AUX ON
-			AUX.tipo_variante = M.PRODUCTO_TIPO_VARIANTE
-		INNER JOIN (select PC.producto_variante_codigo, SUM(PC.compra_producto_cantidad) - AUX2.stock_ventas as stock 
-					from GD2C2022.GAME_OF_JOINS.PRODUCTOS_COMPRAS PC
-					LEFT JOIN (select PV.producto_variante_codigo, PV.producto_codigo, SUM(PV.venta_producto_cantidad) as stock_ventas 
-								from GD2C2022.GAME_OF_JOINS.PRODUCTOS_VENTAS PV
-								GROUP BY PV.producto_variante_codigo, PV.producto_codigo) AS AUX2 ON 
-								PC.producto_variante_codigo = AUX2.producto_variante_codigo 
-								and PC.producto_codigo = AUX2.producto_codigo
-								GROUP BY PC.producto_variante_codigo, AUX2.stock_ventas) as AUX3 ON
-			AUX3.producto_variante_codigo = M.PRODUCTO_VARIANTE_CODIGO
+			gd_esquema.maestra m1
 		WHERE
-			M.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
-	)
+			m1.PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
+			AND m1.PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO ) precio_actual,
+		( (
+		select
+			sum(COMPRA_PRODUCTO_CANTIDAD)
+		FROM
+			gd_esquema.maestra m2
+		where
+			PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
+			AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
+			AND COMPRA_NUMERO IS NOT NULL ) - (
+		select
+			sum(VENTA_PRODUCTO_CANTIDAD)
+		FROM
+			gd_esquema.maestra m3
+		WHERE
+			PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
+			AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
+			AND VENTA_CODIGO IS NOT NULL ) ) as stock
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.tipos_variantes tv ON
+		tv.tipo_variante = m.PRODUCTO_TIPO_VARIANTE
+	INNER JOIN GAME_OF_JOINS.variantes v ON
+		v.id_tipo_variante = tv.id
+		AND v.variante = m.PRODUCTO_VARIANTE
+	WHERE
+		m.PRODUCTO_CODIGO IS NOT NULL
+		AND m.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
 GO
 
 --ventas
@@ -1092,7 +1146,7 @@ AS
 GO
 
 --ventas_descuento
-IF Objectid('GAME_OF_JOINS.Migrar_Ventas_Descuento') IS NOT NULL
+IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Descuento') IS NOT NULL
 	DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
 
 GO 
@@ -1109,7 +1163,43 @@ AS
 			AND m.VENTA_DESCUENTO_CONCEPTO = dtos.venta_descuento_concepto
 		WHERE m.VENTA_CODIGO IS NOT NULL
 GO
+
+--ventas_medios_envios
+IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medios_Envios') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
+AS 
+    INSERT INTO GAME_OF_JOINS.ventas_medios_envios
+                (venta_medio_envio) 
+	SELECT
+		DISTINCT VENTA_MEDIO_ENVIO
+	FROM
+		gd_esquema.maestra
+	WHERE
+		VENTA_MEDIO_ENVIO IS NOT NULL
+GO
+
 --ventas_envios
+IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Envios') IS NOT NULL
+	DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
+AS
+	INSERT INTO GAME_OF_JOINS.ventas_envios
+		SELECT 
+			DISTINCT VENTA_CODIGO,
+			VENTA_ENVIO_PRECIO,
+			menv.id
+		FROM gd_esquema.maestra m
+		INNER JOIN GAME_OF_JOINS.ventas_medios_envios menv 
+			ON m.VENTA_MEDIO_ENVIO = menv.venta_medio_envio
+		INNER JOIN GAME_OF_JOINS.medios_envios_habilitados meh
+			ON menv.id = meh.id_venta_medio_envio
+			AND m.CLIENTE_CODIGO_POSTAL = meh.codigo_postal
+		WHERE m.VENTA_CODIGO IS NOT NULL
+GO
 --ventas_medio_pago
 IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medio_Pago') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medio_Pago 
@@ -1131,23 +1221,6 @@ AS
 
 GO
 
---ventas_medios_envios
-IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medios_Envios') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
-
-GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
-AS 
-    INSERT INTO GAME_OF_JOINS.ventas_medios_envios
-                (venta_medio_envio) 
-	SELECT
-		DISTINCT VENTA_MEDIO_ENVIO
-	FROM
-		gd_esquema.maestra
-	WHERE
-		VENTA_MEDIO_ENVIO IS NOT NULL
-GO
-
 
 ------------------------------------------------
 ------------ Migracion de datos ----------------
@@ -1165,12 +1238,15 @@ EXEC GAME_OF_JOINS.Migrar_Tipos_Cupones
 EXEC GAME_OF_JOINS.Migrar_Cupones
 EXEC GAME_OF_JOINS.Migrar_Localidades
 EXEC GAME_OF_JOINS.Migrar_Codigos_Postales
+EXEC GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados
 EXEC GAME_OF_JOINS.Migrar_Descuentos
 EXEC GAME_OF_JOINS.Migrar_Productos
 EXEC GAME_OF_JOINS.Migrar_Clientes
 EXEC GAME_OF_JOINS.Migrar_Ventas
 EXEC GAME_OF_JOINS.Migrar_Ventas_Canales
 EXEC GAME_OF_JOINS.Migrar_Ventas_Cupones 
+EXEC GAME_OF_JOINS.Migrar_Ventas_Envios
+EXEC GAME_OF_JOINS.Migrar_Ventas_Descuento
 EXEC GAME_OF_JOINS.Migrar_Variantes
 EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
@@ -1196,12 +1272,15 @@ DROP PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Cupones
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Localidades
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Codigos_Postales
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Descuentos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Clientes
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Canales
-DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Cupones 
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Cupones
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores
