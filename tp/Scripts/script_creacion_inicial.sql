@@ -8,7 +8,7 @@ IF NOT EXISTS (SELECT *
                FROM   sys.schemas 
                WHERE  name = 'GAME_OF_JOINS') 
   BEGIN 
-      EXEC ('CREATE SCHEMA [GAME_OF_JOINS] AUTHORIZATION dbo') 
+      EXEC ('CREATE SCHEMA [GAME_OF_JOINS] AUTHORIZATION dbo')
   END 
 
 GO
@@ -1146,7 +1146,7 @@ AS
 GO
 
 --ventas_descuento
-IF Objectid('GAME_OF_JOINS.Migrar_Ventas_Descuento') IS NOT NULL
+IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Descuento') IS NOT NULL
 	DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
 
 GO 
@@ -1163,7 +1163,43 @@ AS
 			AND m.VENTA_DESCUENTO_CONCEPTO = dtos.venta_descuento_concepto
 		WHERE m.VENTA_CODIGO IS NOT NULL
 GO
+
+--ventas_medios_envios
+IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medios_Envios') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
+
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
+AS 
+    INSERT INTO GAME_OF_JOINS.ventas_medios_envios
+                (venta_medio_envio) 
+	SELECT
+		DISTINCT VENTA_MEDIO_ENVIO
+	FROM
+		gd_esquema.maestra
+	WHERE
+		VENTA_MEDIO_ENVIO IS NOT NULL
+GO
+
 --ventas_envios
+IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Envios') IS NOT NULL
+	DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
+GO 
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
+AS
+	INSERT INTO GAME_OF_JOINS.ventas_envios
+		SELECT 
+			DISTINCT VENTA_CODIGO,
+			VENTA_ENVIO_PRECIO,
+			menv.id
+		FROM gd_esquema.maestra m
+		INNER JOIN GAME_OF_JOINS.ventas_medios_envios menv 
+			ON m.VENTA_MEDIO_ENVIO = menv.venta_medio_envio
+		INNER JOIN GAME_OF_JOINS.medios_envios_habilitados meh
+			ON menv.id = meh.id_venta_medio_envio
+			AND m.CLIENTE_CODIGO_POSTAL = meh.codigo_postal
+		WHERE m.VENTA_CODIGO IS NOT NULL
+GO
 --ventas_medio_pago
 IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medio_Pago') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medio_Pago 
@@ -1183,23 +1219,6 @@ AS
 			M.VENTA_MEDIO_PAGO = MP.medio_pago
 	)
 
-GO
-
---ventas_medios_envios
-IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medios_Envios') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
-
-GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
-AS 
-    INSERT INTO GAME_OF_JOINS.ventas_medios_envios
-                (venta_medio_envio) 
-	SELECT
-		DISTINCT VENTA_MEDIO_ENVIO
-	FROM
-		gd_esquema.maestra
-	WHERE
-		VENTA_MEDIO_ENVIO IS NOT NULL
 GO
 
 
@@ -1226,6 +1245,8 @@ EXEC GAME_OF_JOINS.Migrar_Clientes
 EXEC GAME_OF_JOINS.Migrar_Ventas
 EXEC GAME_OF_JOINS.Migrar_Ventas_Canales
 EXEC GAME_OF_JOINS.Migrar_Ventas_Cupones 
+EXEC GAME_OF_JOINS.Migrar_Ventas_Envios
+EXEC GAME_OF_JOINS.Migrar_Ventas_Descuento
 EXEC GAME_OF_JOINS.Migrar_Variantes
 EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
@@ -1257,7 +1278,9 @@ DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Clientes
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Canales
-DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Cupones 
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Cupones
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores
