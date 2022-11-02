@@ -630,6 +630,22 @@ AS
 GO
 
 --compras_descuentos
+IF Object_id('GAME_OF_JOINS.Migrar_Compras_Descuentos') IS NOT NULL
+	DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Descuentos
+
+GO 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Compras_Descuentos
+AS
+	INSERT INTO GAME_OF_JOINS.compras_descuentos
+		SELECT 
+			DISTINCT COMPRA_NUMERO,
+			DESCUENTO_COMPRA_VALOR,
+			DESCUENTO_COMPRA_CODIGO
+		FROM gd_esquema.maestra 
+		WHERE COMPRA_NUMERO IS NOT NULL
+		AND DESCUENTO_COMPRA_CODIGO IS NOT NULL
+GO
+
 --compras_medio_pago
 IF Object_id('GAME_OF_JOINS.Migrar_Compras_Medio_Pago') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago 
@@ -1262,6 +1278,7 @@ EXEC GAME_OF_JOINS.Migrar_Variantes
 EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Compras
+EXEC GAME_OF_JOINS.Migrar_Compras_Descuentos
 EXEC GAME_OF_JOINS.Migrar_Variantes_Productos
 EXEC GAME_OF_JOINS.Migrar_Productos_Compras
 EXEC GAME_OF_JOINS.Migrar_Productos_Ventas
@@ -1296,6 +1313,7 @@ DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Descuentos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Ventas
