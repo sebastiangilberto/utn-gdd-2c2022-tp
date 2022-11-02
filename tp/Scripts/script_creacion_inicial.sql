@@ -4,6 +4,9 @@ USE GD2C2022
 ------- Creamos Schema GAME_OF_JOINS -----------
 ------------------------------------------------
 
+SET ANSI_WARNINGS OFF
+GO
+
 IF NOT EXISTS (SELECT * 
                FROM   sys.schemas 
                WHERE  name = 'GAME_OF_JOINS') 
@@ -22,7 +25,7 @@ IF Object_id('GAME_OF_JOINS.Erase_All_Foreign_Keys') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Erase_All_Foreign_Keys
+CREATE PROCEDURE GAME_OF_JOINS.Erase_All_Foreign_Keys
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR 
@@ -49,7 +52,7 @@ IF Object_id('GAME_OF_JOINS.Drop_All_Tables') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Drop_All_Tables
+CREATE PROCEDURE GAME_OF_JOINS.Drop_All_Tables
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR  
@@ -418,8 +421,8 @@ ALTER TABLE GAME_OF_JOINS.productos_ventas
 ALTER TABLE GAME_OF_JOINS.productos_ventas 
   ADD CONSTRAINT fk_productos_ventas_venta_codigo FOREIGN KEY (venta_codigo) REFERENCES GAME_OF_JOINS.ventas(venta_codigo) 
 
---ALTER TABLE GAME_OF_JOINS.productos_ventas 
---  ADD CONSTRAINT fk_productos_ventas_producto_variante_codigo FOREIGN KEY (producto_variante_codigo) REFERENCES GAME_OF_JOINS.variantes_productos(producto_variante_codigo) 
+ALTER TABLE GAME_OF_JOINS.productos_ventas 
+  ADD CONSTRAINT fk_productos_ventas_producto_variante_codigo FOREIGN KEY (producto_variante_codigo) REFERENCES GAME_OF_JOINS.variantes_productos(producto_variante_codigo) 
 
 GO
 
@@ -445,8 +448,8 @@ ALTER TABLE GAME_OF_JOINS.productos_compras
 ALTER TABLE GAME_OF_JOINS.productos_compras 
   ADD CONSTRAINT fk_productos_compras_compra_numero FOREIGN KEY (compra_numero) REFERENCES GAME_OF_JOINS.compras(compra_numero) 
 
---ALTER TABLE GAME_OF_JOINS.productos_compras 
---  ADD CONSTRAINT fk_productos_compras_producto_variante_codigo FOREIGN KEY (producto_variante_codigo) REFERENCES GAME_OF_JOINS.variantes_productos(producto_variante_codigo) 
+ALTER TABLE GAME_OF_JOINS.productos_compras 
+  ADD CONSTRAINT fk_productos_compras_producto_variante_codigo FOREIGN KEY (producto_variante_codigo) REFERENCES GAME_OF_JOINS.variantes_productos(producto_variante_codigo) 
 
 GO
 
@@ -493,7 +496,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Canales') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Canales 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Canales 
 AS 
     INSERT INTO GAME_OF_JOINS.canales 
                 (canal) 
@@ -512,7 +515,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Categorias_Productos') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Categorias_Productos 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Categorias_Productos 
 AS 
     INSERT INTO GAME_OF_JOINS.categorias_productos 
                 (producto_categoria)
@@ -530,7 +533,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Clientes') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Clientes 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Clientes 
 AS 
     INSERT INTO GAME_OF_JOINS.clientes 
                 (cliente_dni,
@@ -572,7 +575,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Codigos_Postales') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Codigos_Postales 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Codigos_Postales 
 AS 
     INSERT INTO GAME_OF_JOINS.codigos_postales 
                 (codigo_postal,
@@ -607,7 +610,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Compras') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Compras 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Compras 
 AS 
     INSERT INTO GAME_OF_JOINS.compras 
                 (compra_numero, compra_fecha, proveedor_cuit, id_compra_medio_pago, compra_total) 
@@ -633,7 +636,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Compras_Medio_Pago') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago 
 AS 
     INSERT INTO GAME_OF_JOINS.compras_medio_pago 
                 (compra_medio_pago) 
@@ -651,7 +654,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Cupones') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Cupones 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Cupones
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Cupones
 AS 
     INSERT INTO GAME_OF_JOINS.cupones
                 (venta_cupon_codigo, venta_cupon_fecha_desde, venta_cupon_fecha_hasta, venta_cupon_valor, id_tipo_cupon) 
@@ -673,7 +676,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Descuentos') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Descuentos 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Descuentos
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Descuentos
 AS 
     INSERT INTO GAME_OF_JOINS.descuentos
                 (venta_descuento_concepto, venta_descuento_valor) 
@@ -693,7 +696,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Localidades') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Localidades 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Localidades 
 AS 
     INSERT INTO GAME_OF_JOINS.localidades 
                 (localidad,
@@ -725,7 +728,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Medios_Envios_Habilitados
 AS 
     INSERT INTO GAME_OF_JOINS.medios_envios_habilitados
                 (id_venta_medio_envio, codigo_postal, venta_envio_precio_actual, tiempo_estimado_envio) 
@@ -764,7 +767,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Medio_Pago') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Medio_Pago 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Medio_Pago
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Medio_Pago
 AS 
     INSERT INTO GAME_OF_JOINS.medios_pago
                 (medio_pago_descuento, medio_pago) 
@@ -782,7 +785,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Productos') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Productos
 AS 
     INSERT INTO GAME_OF_JOINS.productos
                 (producto_codigo, producto_nombre, producto_descripcion, id_producto_categoria, id_producto_marca, id_producto_material) 
@@ -811,22 +814,26 @@ IF Object_id('GAME_OF_JOINS.Migrar_Productos_Compras') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras
 AS 
     INSERT INTO GAME_OF_JOINS.productos_compras 
                 (producto_codigo, compra_numero, producto_variante_codigo, compra_producto_cantidad, compra_producto_precio, compra_total)
 	SELECT
-		PRODUCTO_CODIGO,
-		COMPRA_NUMERO,
-		PRODUCTO_VARIANTE_CODIGO,
-		COMPRA_PRODUCTO_CANTIDAD,
-		COMPRA_PRODUCTO_PRECIO,
-		COMPRA_PRODUCTO_CANTIDAD * COMPRA_PRODUCTO_PRECIO
+		M.PRODUCTO_CODIGO,
+		M.COMPRA_NUMERO,
+		M.PRODUCTO_VARIANTE_CODIGO,
+		M.COMPRA_PRODUCTO_CANTIDAD,
+		M.COMPRA_PRODUCTO_PRECIO,
+		M.COMPRA_PRODUCTO_CANTIDAD * M.COMPRA_PRODUCTO_PRECIO
 	FROM
-		gd_esquema.maestra
+		gd_esquema.maestra M
+	INNER JOIN GAME_OF_JOINS.variantes_productos VP ON
+			M.PRODUCTO_CODIGO = VP.producto_codigo AND 
+			M.PRODUCTO_VARIANTE_CODIGO = VP.producto_variante_codigo
 	WHERE
-		COMPRA_NUMERO IS NOT NULL
-		AND PRODUCTO_CODIGO IS NOT NULL
+		M.COMPRA_NUMERO IS NOT NULL
+		AND M.PRODUCTO_CODIGO IS NOT NULL
+		AND M.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
 
 GO
 --productos_marcas
@@ -835,7 +842,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Productos_Marcas') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos_Marcas 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Productos_Marcas 
 AS 
     INSERT INTO GAME_OF_JOINS.productos_marcas 
                 (producto_marca)
@@ -855,7 +862,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Productos_Material') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos_Material 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Productos_Material 
 AS 
     INSERT INTO GAME_OF_JOINS.productos_material 
                 (producto_material)
@@ -873,7 +880,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Productos_Ventas') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Productos_Ventas 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Productos_Ventas 
 AS 
     INSERT INTO GAME_OF_JOINS.productos_ventas 
                 (venta_codigo,
@@ -884,17 +891,21 @@ AS
                 venta_producto_total
                 ) 
 	SELECT
-		VENTA_CODIGO,
-		PRODUCTO_CODIGO,
-		PRODUCTO_VARIANTE_CODIGO,
-		VENTA_PRODUCTO_CANTIDAD,
-		VENTA_PRODUCTO_PRECIO,
-		VENTA_PRODUCTO_CANTIDAD * VENTA_PRODUCTO_PRECIO as vendido
+		M.VENTA_CODIGO,
+		M.PRODUCTO_CODIGO,
+		M.PRODUCTO_VARIANTE_CODIGO,
+		M.VENTA_PRODUCTO_CANTIDAD,
+		M.VENTA_PRODUCTO_PRECIO,
+		M.VENTA_PRODUCTO_CANTIDAD * M.VENTA_PRODUCTO_PRECIO as vendido
 	FROM
-		gd_esquema.maestra
+		gd_esquema.maestra M
+	INNER JOIN GAME_OF_JOINS.variantes_productos VP ON
+			M.PRODUCTO_CODIGO = VP.producto_codigo AND 
+			M.PRODUCTO_VARIANTE_CODIGO = VP.producto_variante_codigo
 	WHERE
-		VENTA_CODIGO IS NOT NULL
-		AND PRODUCTO_CODIGO IS NOT NULL
+		M.VENTA_CODIGO IS NOT NULL
+		AND M.PRODUCTO_CODIGO IS NOT NULL
+		AND M.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
 
 GO
 
@@ -904,7 +915,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Proveedores') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Proveedores 
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Proveedores 
 AS 
     INSERT INTO GAME_OF_JOINS.proveedores 
                 (proveedor_cuit,
@@ -938,7 +949,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Provincias') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Provincias 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Provincias
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Provincias
 AS 
     INSERT INTO GAME_OF_JOINS.provincias
                 (provincia) 
@@ -963,7 +974,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Tipos_Cupones') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Cupones
 AS 
     INSERT INTO GAME_OF_JOINS.tipos_cupones
                 (tipo_cupon) 
@@ -979,7 +990,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Tipos_Variantes') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Variantes 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Variantes
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Tipos_Variantes
 AS 
     INSERT INTO GAME_OF_JOINS.tipos_variantes
                 (tipo_variante) 
@@ -999,7 +1010,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Variantes') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Variantes
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Variantes
 AS 
     INSERT INTO GAME_OF_JOINS.variantes
                 (variante, id_tipo_variante) 
@@ -1019,7 +1030,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Variantes_Productos') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
 AS 
     INSERT INTO GAME_OF_JOINS.variantes_productos
                 (producto_variante_codigo,
@@ -1050,7 +1061,7 @@ AS
 		where
 			PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
 			AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
-			AND COMPRA_NUMERO IS NOT NULL ) - (
+			AND COMPRA_NUMERO IS NOT NULL AND COMPRA_PRODUCTO_CANTIDAD IS NOT NULL ) - (
 		select
 			sum(VENTA_PRODUCTO_CANTIDAD)
 		FROM
@@ -1058,7 +1069,7 @@ AS
 		WHERE
 			PRODUCTO_CODIGO = m.PRODUCTO_CODIGO
 			AND PRODUCTO_VARIANTE_CODIGO = m.PRODUCTO_VARIANTE_CODIGO
-			AND VENTA_CODIGO IS NOT NULL ) ) as stock
+			AND VENTA_CODIGO IS NOT NULL AND VENTA_PRODUCTO_CANTIDAD IS NOT NULL ) ) as stock
 	FROM
 		gd_esquema.maestra m
 	INNER JOIN GAME_OF_JOINS.tipos_variantes tv ON
@@ -1076,7 +1087,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Ventas') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Ventas
 AS 
     INSERT INTO GAME_OF_JOINS.ventas
                 (venta_codigo, venta_fecha, id_cliente, id_venta_medio_pago, venta_total) 
@@ -1104,7 +1115,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Canales') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Canales 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Canales
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Canales
 AS 
     INSERT INTO GAME_OF_JOINS.ventas_canales
                 (venta_codigo, id_canal, venta_canal_costo) 
@@ -1126,7 +1137,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Cupones') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Cupones 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Cupones
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Cupones
 AS 
     INSERT INTO GAME_OF_JOINS.ventas_cupones
                 (venta_codigo, venta_cupon_codigo, venta_cupon_importe) 
@@ -1150,7 +1161,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Descuento') IS NOT NULL
 	DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
 AS
 	INSERT INTO GAME_OF_JOINS.ventas_descuento
 		SELECT 
@@ -1169,7 +1180,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medios_Envios') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medios_Envios
 AS 
     INSERT INTO GAME_OF_JOINS.ventas_medios_envios
                 (venta_medio_envio) 
@@ -1185,7 +1196,7 @@ GO
 IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Envios') IS NOT NULL
 	DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
 AS
 	INSERT INTO GAME_OF_JOINS.ventas_envios
 		SELECT 
@@ -1205,7 +1216,7 @@ IF Object_id('GAME_OF_JOINS.Migrar_Ventas_Medio_Pago') IS NOT NULL
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medio_Pago 
 
 GO 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
+CREATE PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Medio_Pago
 AS 
     INSERT INTO GAME_OF_JOINS.ventas_medio_pago
                 (venta_medio_pago_costo, id_medio_pago) 
@@ -1251,9 +1262,9 @@ EXEC GAME_OF_JOINS.Migrar_Variantes
 EXEC GAME_OF_JOINS.Migrar_Proveedores
 EXEC GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 EXEC GAME_OF_JOINS.Migrar_Compras
+EXEC GAME_OF_JOINS.Migrar_Variantes_Productos
 EXEC GAME_OF_JOINS.Migrar_Productos_Compras
 EXEC GAME_OF_JOINS.Migrar_Productos_Ventas
-EXEC GAME_OF_JOINS.Migrar_Variantes_Productos
 
 GO
 
@@ -1282,10 +1293,10 @@ DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Cupones
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Envios
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Ventas_Descuento
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes
-DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Proveedores
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras_Medio_Pago
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Compras
+DROP PROCEDURE GAME_OF_JOINS.Migrar_Variantes_Productos
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Compras
 DROP PROCEDURE GAME_OF_JOINS.Migrar_Productos_Ventas
 DROP PROCEDURE GAME_OF_JOINS.Erase_All_Foreign_Keys
