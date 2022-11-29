@@ -1,1 +1,0 @@
-- Como los códigos postales no son únicos, sino que se repiten para distintas localidades, decidimos en la tabla "clientes" y "proveedores" usar el id_localidad, en lugar del id_codigo_postal

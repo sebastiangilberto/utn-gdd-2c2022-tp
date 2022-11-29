@@ -1,14 +1,21 @@
 version: "3"
 services:
-  gdd-practica:
-    image: "mcr.microsoft.com/mssql/server:2019-latest"
+  db:
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
     ports:
       - "1433:1433"
-    hostname: gdd-practica
+    container_name: gdd-tp
     environment:
       - ACCEPT_EULA=Y
+      - MSSQL_PID=Express
       - SA_PASSWORD=Gdd2022!
     volumes:
-      - $PWD/mssqluser:/var/opt/sqlserver:rw
-      - $PWD/mssqlsystem:/var/opt/mssql:rw
-      - $PWD/tp:/var/opt/tp
+        - type: bind
+          source: $PWD/mssqluser
+          target: /var/opt/sqlserver
+        - type: bind
+          source: $PWD/mssqlsystem
+          target: /var/opt/mssql
+        - type: bind
+          source: $PWD/tp
+          target: /var/opt/tp

@@ -1,0 +1,64 @@
+
+(4 filas afectadas)
+
+(4 filas afectadas)
+
+(6 filas afectadas)
+
+(10 filas afectadas)
+
+(3 filas afectadas)
+
+(3 filas afectadas)
+
+(4 filas afectadas)
+
+(5 filas afectadas)
+
+(2 filas afectadas)
+
+(542 filas afectadas)
+
+(2523 filas afectadas)
+
+(3234 filas afectadas)
+
+(5817 filas afectadas)
+
+(8708 filas afectadas)
+
+(1310 filas afectadas)
+
+(7077 filas afectadas)
+
+(7077 filas afectadas)
+
+(7077 filas afectadas)
+
+(26926 filas afectadas)
+
+(770 filas afectadas)
+
+(8708 filas afectadas)
+
+(3 filas afectadas)
+
+(9 filas afectadas)
+Mens 2627, Nivel 14, Estado 1, Procedimiento Migrar_Proveedores, Línea 4
+Infracción de la restricción PRIMARY KEY 'PK__proveedo__516F34296DCFF251'. No se puede insertar una clave duplicada en el objeto 'GAME_OF_JOINS.proveedores'. El valor de la clave duplicada es (2-67031316-5).
+Se terminó la instrucción.
+
+(4 filas afectadas)
+Mens 547, Nivel 16, Estado 0, Procedimiento Migrar_Compras, Línea 4
+Instrucción INSERT en conflicto con la restricción FOREIGN KEY "fk_compras_proveedor_cuit". El conflicto ha aparecido en la base de datos "GD2C2022", tabla "GAME_OF_JOINS.proveedores", column 'proveedor_cuit'.
+Se terminó la instrucción.
+Mens 547, Nivel 16, Estado 0, Procedimiento Migrar_Compras_Descuentos, Línea 3
+Instrucción INSERT en conflicto con la restricción FOREIGN KEY "fk_compras_descuentos_compra_numero". El conflicto ha aparecido en la base de datos "GD2C2022", tabla "GAME_OF_JOINS.compras", column 'compra_numero'.
+Se terminó la instrucción.
+
+(1310 filas afectadas)
+Mens 547, Nivel 16, Estado 0, Procedimiento Migrar_Productos_Compras, Línea 4
+Instrucción INSERT en conflicto con la restricción FOREIGN KEY "fk_productos_compras_compra_numero". El conflicto ha aparecido en la base de datos "GD2C2022", tabla "GAME_OF_JOINS.compras", column 'compra_numero'.
+Se terminó la instrucción.
+
+(106405 filas afectadas)
