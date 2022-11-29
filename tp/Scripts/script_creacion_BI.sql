@@ -790,31 +790,3 @@ GO
 EXEC GAME_OF_JOINS.BI_Drop_All_Procedures
 
 GO
-
-------------------------------------------------
------------------- Tests -----------------------
-------------------------------------------------
-
-IF Object_id('GAME_OF_JOINS.BI_table_row_count') IS NOT NULL 
-  DROP VIEW GAME_OF_JOINS.BI_table_row_count
-GO 
-
-CREATE OR ALTER VIEW GAME_OF_JOINS.BI_table_row_count
-AS
-	SELECT
-		o.NAME as table_name,
-		i.rowcnt as row_count
-	FROM
-		sysindexes AS i
-	INNER JOIN sysobjects AS o ON
-		i.id = o.id
-	WHERE
-		i.indid < 2
-		AND OBJECTPROPERTY(o.id,
-		'IsMSShipped') = 0
-		AND o.name LIKE 'BI_%'
-GO 
-
-SELECT * FROM GAME_OF_JOINS.BI_table_row_count ORDER BY table_name ASC
-
-DROP VIEW GAME_OF_JOINS.BI_table_row_count

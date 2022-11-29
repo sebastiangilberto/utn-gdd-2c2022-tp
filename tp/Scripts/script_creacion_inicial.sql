@@ -859,18 +859,23 @@ AS
 		m.PRODUCTO_CODIGO,
 		m.COMPRA_NUMERO,
 		m.PRODUCTO_VARIANTE_CODIGO,
-		m.COMPRA_PRODUCTO_CANTIDAD,
+		SUM(m.COMPRA_PRODUCTO_CANTIDAD) AS cantidad,
 		m.COMPRA_PRODUCTO_PRECIO,
-		m.COMPRA_PRODUCTO_CANTIDAD * m.COMPRA_PRODUCTO_PRECIO
+		SUM(m.COMPRA_PRODUCTO_CANTIDAD) * m.COMPRA_PRODUCTO_PRECIO AS total
 	FROM
 		gd_esquema.maestra m
 	INNER JOIN GAME_OF_JOINS.producto_variante pv ON
-			m.PRODUCTO_CODIGO = pv.pvar_producto_codigo AND 
-			m.PRODUCTO_VARIANTE_CODIGO = pv.pvar_codigo
+		m.PRODUCTO_CODIGO = pv.pvar_producto_codigo
+		AND m.PRODUCTO_VARIANTE_CODIGO = pv.pvar_codigo
 	WHERE
 		m.COMPRA_NUMERO IS NOT NULL
 		AND m.PRODUCTO_CODIGO IS NOT NULL
 		AND m.PRODUCTO_VARIANTE_CODIGO IS NOT NULL
+	GROUP BY
+		m.PRODUCTO_CODIGO,
+		m.COMPRA_NUMERO,
+		m.PRODUCTO_VARIANTE_CODIGO,
+		m.COMPRA_PRODUCTO_PRECIO
 
 GO
 
@@ -1351,30 +1356,3 @@ GO
 EXEC GAME_OF_JOINS.Drop_All_Procedures
 
 GO
-
-------------------------------------------------
--------- Test Row Count For Tables -------------
-------------------------------------------------
-
-IF Object_id('GAME_OF_JOINS.table_row_count') IS NOT NULL 
-  DROP VIEW GAME_OF_JOINS.table_row_count
-GO 
-
-CREATE OR ALTER VIEW GAME_OF_JOINS.table_row_count
-AS
-	SELECT
-		o.NAME as table_name,
-		i.rowcnt as row_count
-	FROM
-		sysindexes AS i
-	INNER JOIN sysobjects AS o ON
-		i.id = o.id
-	WHERE
-		i.indid < 2
-		AND OBJECTPROPERTY(o.id,
-		'IsMSShipped') = 0
-GO 
-
---SELECT * FROM GAME_OF_JOINS.table_row_count ORDER BY table_name ASC
-
-DROP VIEW GAME_OF_JOINS.table_row_count
