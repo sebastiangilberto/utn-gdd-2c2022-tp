@@ -848,7 +848,7 @@ AS
 	)
 GO
 
---producto_compra
+--compra_producto
 IF Object_id('GAME_OF_JOINS.Migrar_Compra_Producto') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.Migrar_Compra_Producto 
 GO 
