@@ -66,6 +66,8 @@ Ya podemos hacer consultas libremente sobre el modelo OLPT y el OLAP
 
 ### LucidChart
 
-Para la confección del DER, utilizamos la herramienta [LucidChart](https://www.lucidchart.com)
+Para la confección del DER, utilizamos la herramienta [LucidChart](https://www.lucidchart.com):
 
-[Link al diagrama en LucidChart](https://lucid.app/lucidchart/4b07c250-a3f0-4099-98a6-95581a7dbb32/edit?invitationId=inv_05041888-b584-4db2-a2a2-e8211068b1a5&page=vlwS8_zE-Bex#)
+- [Modelo de Datos](https://lucid.app/lucidchart/4b07c250-a3f0-4099-98a6-95581a7dbb32/edit?invitationId=inv_05041888-b584-4db2-a2a2-e8211068b1a5&page=vlwS8_zE-Bex#)
+
+- [Modelo de BI](https://lucid.app/lucidchart/0e57652c-dc0f-4291-9fa8-cec430f0e9a3/edit?viewport_loc=-11%2C-11%2C2219%2C900%2C0_0&invitationId=inv_5f74e0e2-5d07-41d7-9476-4dc547fe7d37)
