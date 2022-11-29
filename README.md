@@ -1,6 +1,6 @@
 <h1 align="center"> Gestión Bazaar </h1>
 <p align="center">
-<img src="tp/bazaar.png") width=50% height=50% >
+<img src="tp/images/bazaar.png") width=50% height=50% >
 </p>
 <p align="center"> Trabajo Practico - Gestion de Datos - UTN FRBA 2022 2C  <p>
 
@@ -27,7 +27,7 @@ Además, se solicita la implementación de un segundo modelo, con sus
 correspondientes procedimientos y vistas, que pueda ser utilizado para la obtención de
 indicadores de gestión, análisis de escenarios y proyección para la toma de decisiones.
 
-> _Ver enunciado completo [acá](tp/Enunciado.pdf)_
+> _Ver enunciado completo [acá](tp/documentos/Enunciado.pdf)_
 
 # Pasos para ejecutar el TP
 
@@ -62,7 +62,7 @@ Ya podemos hacer consultas libremente sobre el modelo OLPT y el OLAP
 
 ### Diagrama de entidad relación
 
-![Diagrama entidad relación](tp/der.svg)
+[![Diagrama entidad relación](tp/der/der.jpeg)](tp/der/der.svg)
 
 ### LucidChart
 
