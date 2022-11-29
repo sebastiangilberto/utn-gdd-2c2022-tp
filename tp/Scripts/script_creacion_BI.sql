@@ -229,9 +229,9 @@ CREATE TABLE GAME_OF_JOINS.BI_venta
 	id_venta INT PRIMARY KEY IDENTITY(1, 1),
 	venta_codigo DECIMAL(19,0) NOT NULL,
 	total DECIMAL(18,2) NOT NULL,
-	valor_envio DECIMAL(18,2) NOT NULL,
+	valor_envio DECIMAL(18,2),
 	mepa_costo DECIMAL(18,2) NOT NULL,
-	mepa_descuento DECIMAL(18,2) NOT NULL,
+	mepa_descuento DECIMAL(18,2),
 	id_tiempo INT NOT NULL, --fk
 	id_cliente INT NOT NULL, --fk
 	id_provincia INT NOT NULL, --fk
@@ -273,12 +273,12 @@ CREATE TABLE GAME_OF_JOINS.BI_venta_producto
 ------------------------------------------------
 
 -- devuelve el rango etario en base a una fecha
-IF Object_id('GAME_OF_JOINS.BI_Obtener_Rango_Edad') IS NOT NULL 
-  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Rango_Edad 
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Rango_Etario') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Rango_Etario 
 
 GO 
 
-CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Rango_Edad(@fecha_nacimiento DATE) 
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Rango_Etario(@fecha_nacimiento DATE) 
 RETURNS NVARCHAR(255) 
 AS 
   BEGIN 
@@ -335,6 +335,142 @@ AS
 
 GO 
 
+-- devuelve el id_provincia de bi en base al cliente del modelo  
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Provincia') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Provincia 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Provincia(@id_cliente_modelo INT) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_provincia AS INT 
+      DECLARE @prov AS NVARCHAR(255) 
+
+		SELECT
+			@prov = p.prov_provincia
+		FROM
+			GAME_OF_JOINS.cliente c
+		INNER JOIN GAME_OF_JOINS.codigo_postal cp ON
+			c.clie_codigo_postal = cp.copo_id
+		INNER JOIN GAME_OF_JOINS.localidad l ON
+			cp.copo_localidad = l.loca_id
+		INNER JOIN GAME_OF_JOINS.provincia p ON
+			l.loca_provincia = p.prov_id
+		WHERE
+			clie_id = @id_cliente_modelo
+		
+		SELECT
+			@id_provincia = id_provincia
+		FROM
+			GAME_OF_JOINS.BI_provincia
+		WHERE
+			descripcion = @prov
+
+      RETURN @id_provincia 
+  END; 
+
+GO 
+
+-- devuelve el id_canal de bi en base al codigo de venta del modelo  
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Canal') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Canal 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Canal(@codigo_venta_modelo INT) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_canal AS INT 
+      DECLARE @canal AS NVARCHAR(255) 
+
+		SELECT
+			@canal = c.cana_canal
+		FROM
+			GAME_OF_JOINS.venta_canal vc
+		INNER JOIN GAME_OF_JOINS.canal c ON
+			vc.veca_canal = c.cana_id
+      
+		SELECT
+			@id_canal = id_canal
+		FROM
+			GAME_OF_JOINS.BI_canal
+		WHERE
+			descripcion = @canal
+
+      RETURN @id_canal
+  END; 
+
+GO 
+
+-- devuelve el id_tipo_envio de bi en base al codigo de venta del modelo  
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Tipo_Envio') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Tipo_Envio 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Tipo_Envio(@codigo_venta_modelo INT) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_tipo_envio AS INT 
+      DECLARE @tipo_envio AS NVARCHAR(255) 
+
+		SELECT
+			@tipo_envio = me.menv_medio_envio
+		FROM
+			GAME_OF_JOINS.venta_envio ve
+		INNER JOIN GAME_OF_JOINS.medio_envio_habilitado hab ON
+			ve.veen_medio_habilitado = hab.menh_id
+		INNER JOIN GAME_OF_JOINS.medio_envio me ON
+			hab.menh_medio_envio = me.menv_id
+      
+		SELECT
+			@id_tipo_envio = id_tipo_envio
+		FROM
+			GAME_OF_JOINS.BI_tipo_envio
+		WHERE
+			descripcion = @tipo_envio
+
+      RETURN @id_tipo_envio
+  END; 
+
+GO 
+
+-- devuelve el id_medio_pago de bi en base al id de venta medio de pago del modelo 
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago(@venta_medio_pago_modelo INT) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_medio_pago AS INT 
+      DECLARE @medio_pago AS NVARCHAR(255) 
+
+		SELECT
+			@medio_pago = mp.mepa_medio_pago
+		FROM
+			GAME_OF_JOINS.venta_medio_pago vmp
+		INNER JOIN GAME_OF_JOINS.medio_pago mp ON
+			vmp.vmep_medio_pago = mp.mepa_id
+      
+		SELECT
+			@id_medio_pago = id_medio_pago
+		FROM
+			GAME_OF_JOINS.BI_medio_pago
+		WHERE
+			descripcion = @medio_pago
+
+      RETURN @id_medio_pago
+  END; 
+
+GO 
+
 ------------------------------------------------
 -------- Procedures para migracion -------------
 ------------------------------------------------
@@ -376,7 +512,7 @@ AS
     INSERT INTO GAME_OF_JOINS.BI_cliente 
                 (rango_etario) 
 	SELECT
-		DISTINCT GAME_OF_JOINS.BI_obtener_rango_edad(clie_fecha_nac)
+		DISTINCT GAME_OF_JOINS.BI_Obtener_Rango_Etario(clie_fecha_nac)
 	FROM
 		GAME_OF_JOINS.cliente
 
@@ -450,6 +586,50 @@ AS
 
 GO
 
+
+--venta
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta
+AS 
+	INSERT INTO GAME_OF_JOINS.BI_venta
+	(venta_codigo, total, valor_envio, mepa_costo, mepa_descuento, id_tiempo, id_cliente, id_provincia, id_canal, id_tipo_envio, id_medio_pago)
+
+	SELECT
+		v.vent_codigo,
+		v.vent_total,
+		ve.veen_precio,
+		mp.vmep_costo,
+		ISNULL((
+		SELECT
+			vd.vede_importe
+		FROM
+			GAME_OF_JOINS.venta v1
+		INNER JOIN GAME_OF_JOINS.venta_descuento vd ON
+			v1.vent_codigo = vd.vede_venta_codigo
+		INNER JOIN GAME_OF_JOINS.descuento d ON
+			vd.vede_descuento = d.descu_id
+		WHERE
+			v1.vent_codigo = v.vent_codigo
+			AND d.descu_tipo = 'Medio Pago'),
+		0) AS mepa_descuento,
+		1 AS id_tiempo,
+		GAME_OF_JOINS.BI_Obtener_Id_Cliente(v.vent_cliente) AS id_cliente,
+		GAME_OF_JOINS.BI_Obtener_Id_Provincia(v.vent_cliente) AS id_provincia,
+		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo) AS id_canal,
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Envio(v.vent_codigo) AS id_tipo_envio,
+		GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago(v.vent_venta_medio_pago) AS id_medio_pago
+	FROM
+		GAME_OF_JOINS.venta v
+	INNER JOIN GAME_OF_JOINS.venta_envio ve ON
+		v.vent_codigo = ve.veen_venta_codigo
+	INNER JOIN GAME_OF_JOINS.venta_medio_pago mp ON
+		v.vent_venta_medio_pago = mp.vmep_id
+GO 
+
 --venta_descuento
 /*
 IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta_Descuento') IS NOT NULL 
@@ -521,31 +701,6 @@ AS
 
 GO 
 
-
---provincia 
-/*
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta 
-
-GO 
-
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta
-AS 
-    INSERT INTO GAME_OF_JOINS.BI_venta
-                (total, id_cliente, id_provincia, id_canal, id_tipo_envio, id_medio_pago) 
-		
-	SELECT
-		v.vent_total,
-		GAME_OF_JOINS.BI_Obtener_Id_Cliente(v.vent_cliente),
-		GAME_OF_JOINS.BI_Obtener_Id_Provincia(v.vent_cliente),
-		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo),
-		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Envio(v.vent_codigo),
-		GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago(v.vent_venta_medio_pago),
-	FROM
-		GAME_OF_JOINS.venta v
-
-GO 
-*/
 ------------------------------------------------
 ---------- Vistas para modelo BI ---------------
 ------------------------------------------------
@@ -621,7 +776,7 @@ EXEC GAME_OF_JOINS.BI_Migrar_Proveedor
 EXEC GAME_OF_JOINS.BI_Migrar_Medio_Pago
 EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Envio
 EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Descuento
---EXEC GAME_OF_JOINS.BI_Migrar_Venta
+EXEC GAME_OF_JOINS.BI_Migrar_Venta
 --EXEC GAME_OF_JOINS.BI_Migrar_Compra
 --EXEC GAME_OF_JOINS.BI_Migrar_Venta_Producto
 --EXEC GAME_OF_JOINS.BI_Migrar_Compra_Producto
@@ -660,6 +815,6 @@ AS
 		AND o.name LIKE 'BI_%'
 GO 
 
---SELECT * FROM GAME_OF_JOINS.BI_table_row_count ORDER BY table_name ASC
+SELECT * FROM GAME_OF_JOINS.BI_table_row_count ORDER BY table_name ASC
 
 DROP VIEW GAME_OF_JOINS.BI_table_row_count

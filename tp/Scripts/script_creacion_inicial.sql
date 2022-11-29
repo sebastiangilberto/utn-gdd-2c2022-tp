@@ -1269,17 +1269,21 @@ CREATE PROCEDURE GAME_OF_JOINS.Migrar_Venta_Envio
 AS
 	INSERT INTO GAME_OF_JOINS.venta_envio
 		(veen_venta_codigo, veen_precio, veen_medio_habilitado)
-		SELECT 
-			DISTINCT VENTA_CODIGO,
-			VENTA_ENVIO_PRECIO,
-			menv.menv_id
-		FROM gd_esquema.maestra m
-		INNER JOIN GAME_OF_JOINS.medio_envio menv 
-			ON m.VENTA_MEDIO_ENVIO = menv.menv_medio_envio
-		INNER JOIN GAME_OF_JOINS.medio_envio_habilitado meh
-			ON menv.menv_id = meh.menh_medio_envio
-			AND m.CLIENTE_CODIGO_POSTAL = meh.menh_codigo_postal
-		WHERE m.VENTA_CODIGO IS NOT NULL
+	SELECT
+		DISTINCT VENTA_CODIGO,
+		VENTA_ENVIO_PRECIO,
+		menv.menv_id
+	FROM
+		gd_esquema.maestra m
+	INNER JOIN GAME_OF_JOINS.medio_envio menv ON
+		m.VENTA_MEDIO_ENVIO = menv.menv_medio_envio
+	INNER JOIN GAME_OF_JOINS.codigo_postal cp ON
+		m.CLIENTE_CODIGO_POSTAL = cp.copo_codigo_postal
+	INNER JOIN GAME_OF_JOINS.medio_envio_habilitado meh ON
+		menv.menv_id = meh.menh_medio_envio
+		AND cp.copo_id = meh.menh_codigo_postal
+	WHERE
+		m.VENTA_CODIGO IS NOT NULL
 GO
 
 --venta_medio_pago
