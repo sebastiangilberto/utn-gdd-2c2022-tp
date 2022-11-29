@@ -227,6 +227,7 @@ CREATE TABLE GAME_OF_JOINS.BI_tipo_envio
 CREATE TABLE GAME_OF_JOINS.BI_venta
   (
 	id_venta INT PRIMARY KEY IDENTITY(1, 1),
+	venta_codigo DECIMAL(19,0) NOT NULL,
 	total DECIMAL(18,2) NOT NULL,
 	valor_envio DECIMAL(18,2) NOT NULL,
 	mepa_costo DECIMAL(18,2) NOT NULL,
@@ -243,7 +244,7 @@ CREATE TABLE GAME_OF_JOINS.BI_venta
 CREATE TABLE GAME_OF_JOINS.BI_venta_descuento
   (
 	id_venta_descuento INT PRIMARY KEY IDENTITY(1, 1),
-	id_venta INT NOT NULL, --fk
+	venta_codigo DECIMAL(19,0) NOT NULL,
 	id_tipo_descuento INT NOT NULL, --fk
 	importe DECIMAL(18,2) NOT NULL, --fk
   )  
