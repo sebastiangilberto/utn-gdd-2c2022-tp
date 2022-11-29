@@ -131,22 +131,113 @@ GO
  * - Tipo de envío 
  */
 
+CREATE TABLE GAME_OF_JOINS.BI_tiempo 
+  ( 
+	 tiem_id INT PRIMARY KEY IDENTITY(1, 1), 
+     tiem_anio INT,
+	 tiem_mes  INT,
+  )
+  
+CREATE TABLE GAME_OF_JOINS.BI_provincia
+  (
+	 prov_id INT PRIMARY KEY IDENTITY(1, 1), 
+     prov_descripcion NVARCHAR(255),
+  )
+  
+CREATE TABLE GAME_OF_JOINS.BI_cliente 
+  ( 
+     clie_codigo INT PRIMARY KEY IDENTITY(1, 1), 
+     clie_edad        NVARCHAR(255),
+  ) 
+
+CREATE TABLE GAME_OF_JOINS.BI_proveedor 
+  ( 
+     prove_cuit NVARCHAR(50) PRIMARY KEY, --pk
+  ) 
+  
+CREATE TABLE GAME_OF_JOINS.BI_canal
+  (
+	 prov_id INT PRIMARY KEY IDENTITY(1, 1), 
+     prov_descripcion NVARCHAR(255),
+  )
+  
+CREATE TABLE GAME_OF_JOINS.BI_medio_pago
+  (
+	 mepa_id INT PRIMARY KEY IDENTITY(1, 1), 
+     mepa_descripcion NVARCHAR(255),
+  )
+  
+CREATE TABLE GAME_OF_JOINS.BI_producto_categoria
+  (
+	 cate_id INT PRIMARY KEY IDENTITY(1, 1), 
+     cate_descripcion NVARCHAR(255),
+  )
+  
+CREATE TABLE GAME_OF_JOINS.BI_producto
+  (
+	 prod_id INT PRIMARY KEY IDENTITY(1, 1), 
+     prod_descripcion NVARCHAR(255),
+  )
+  
+CREATE TABLE GAME_OF_JOINS.BI_tipo_descuento
+  (
+	 descu_id INT PRIMARY KEY IDENTITY(1, 1), 
+     descu_descripcion NVARCHAR(255),
+  )
+  
+CREATE TABLE GAME_OF_JOINS.BI_tipo_envio
+  (
+	 env_id INT PRIMARY KEY IDENTITY(1, 1), 
+     env_descripcion NVARCHAR(255),
+  )
+  
+CREATE TABLE GAME_OF_JOINS.BI_ventas
+  (
+	vent_codigo -- pk
+	vent_total
+	vent_tiempo --fk
+	vent_cliente --fk
+	vent_provincia --fk
+	vent_canal --fk
+	vent_producto --fk
+	vent_producto_categoria --fk
+	vent_tipo_descuento --fk
+	vent_tipo_envio --fk
+	vent_medio_pago --fk
+  )  
+  
+CREATE TABLE GAME_OF_JOINS.BI_compras
+  (
+	comp_codigo --pk
+	comp_total
+	comp_tiempo --fk
+	comp_proveedor --fk
+	comp_medio_pago --fk
+  )  
+
+  
+------------------------------------------------
+------------- Definicion de FKs ----------------
+------------------------------------------------
+
+-- Regla para nombrar FKs: FK_BI_tabla_origen_nombre_campo 
+
 ------------------------------------------------
 ----------- Funciones auxiliares ---------------
 ------------------------------------------------
 
-IF Object_id('GAME_OF_JOINS.BI_Get_Date_Range') IS NOT NULL 
-  DROP FUNCTION GAME_OF_JOINS.BI_Get_Date_Range 
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Rango_Edad') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Rango_Edad 
 
 GO 
 
-CREATE FUNCTION GAME_OF_JOINS.Bi_get_date_range(@fecha_nacimiento DATE) 
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Rango_Edad(@fecha_nacimiento DATE) 
 RETURNS NVARCHAR(255) 
 AS 
   BEGIN 
       DECLARE @edad AS INT = 0 
 
-      SET @edad = Datediff(year, @fecha_nacimiento, Getdate()) 
+      SET @edad = Datediff(year, @fecha_nacimiento, GETDATE()) 
 
       IF @edad < 25
       	RETURN '< 25 años'
@@ -169,9 +260,82 @@ GO
 -------- Procedures para migracion -------------
 ------------------------------------------------
 
+--tiempo   
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Tiempo') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Tiempo 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Tiempo
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_tiempo 
+                (anio, 
+                 mes) 
+	SELECT
+		DISTINCT YEAR(comp_fecha),
+		MONTH(comp_fecha)
+	FROM
+		GAME_OF_JOINS.compra
+	UNION
+	SELECT
+		DISTINCT YEAR(vent_fecha),
+		MONTH(vent_fecha)
+	FROM
+		GAME_OF_JOINS.venta
+
+GO 
 
 
+--cliente 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Cliente') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Cliente 
 
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Cliente 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_cliente 
+                (edad) 
+	SELECT
+		DISTINCT GAME_OF_JOINS.BI_obtener_rango_edad(clie_fecha_nac)
+	FROM
+		GAME_OF_JOINS.cliente
+
+GO 
+
+--canal 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Canal') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Canal 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Canal 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_canal 
+                (cana_descripcion) 
+	SELECT
+		DISTINCT cana_canal
+	FROM
+		GAME_OF_JOINS.canal
+
+GO 
+
+--proveedor 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Proveedor') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Proveedor 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Proveedor 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_proveedor 
+                (prove_cuit) 
+	SELECT
+		DISTINCT prove_cuit
+	FROM
+		GAME_OF_JOINS.proveedor
+
+GO 
 
 ------------------------------------------------
 ---------- Vistas para modelo BI ---------------
@@ -221,23 +385,29 @@ GO
 
 /* 
  * Valor promedio de envío por Provincia por Medio De Envío anual.
-*/
+ */
 
 /*
  * Aumento promedio de precios de cada proveedor anual. Para calcular este
  * indicador se debe tomar como referencia el máximo precio por año menos
  * el mínimo todo esto divido el mínimo precio del año. Teniendo en cuenta
  * que los precios siempre van en aumento.
-*/
+ */
 
 /*
  * Los 3 productos con mayor cantidad de reposición por mes. 
-*/
+ */
 
 ------------------------------------------------
 ------------ Migracion de datos ----------------
 ------------------------------------------------
 
+EXEC GAME_OF_JOINS.BI_Migrar_Tiempo
+EXEC GAME_OF_JOINS.BI_Migrar_Cliente
+EXEC GAME_OF_JOINS.BI_Migrar_Canal
+EXEC GAME_OF_JOINS.BI_Migrar_Proveedor
+
+GO
 
 ------------------------------------------------
 ----------- Drop de Procedures -----------------
