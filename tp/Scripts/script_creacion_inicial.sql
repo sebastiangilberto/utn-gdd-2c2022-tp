@@ -197,8 +197,7 @@ CREATE TABLE GAME_OF_JOINS.canal
 CREATE TABLE GAME_OF_JOINS.descuento
   ( 
      descu_id      INT IDENTITY(1,1) PRIMARY KEY, 
-     descu_concepto nvarchar(255), 
-     descu_valor    DECIMAL(18,2), 
+     descu_tipo nvarchar(255),
   ) 
   
 CREATE TABLE GAME_OF_JOINS.variante
@@ -724,16 +723,15 @@ GO
 CREATE PROCEDURE GAME_OF_JOINS.Migrar_Descuento
 AS 
     INSERT INTO GAME_OF_JOINS.descuento
-                (descu_concepto, descu_valor) 
-	(
-		SELECT
-			DISTINCT VENTA_DESCUENTO_CONCEPTO,
-			VENTA_DESCUENTO_IMPORTE
-		FROM
-			gd_esquema.Maestra
-		WHERE
-			VENTA_DESCUENTO_CONCEPTO IS NOT NULL
-	)
+                (descu_tipo) 
+	SELECT
+		'Medio Pago'
+	UNION
+	SELECT
+		'Envio Gratis'
+	UNION
+	SELECT
+		'Especial'
 GO
 
 --localidad
@@ -1201,15 +1199,48 @@ CREATE PROCEDURE GAME_OF_JOINS.Migrar_Venta_Descuento
 AS
 	INSERT INTO GAME_OF_JOINS.venta_descuento
 		(vede_venta_codigo, vede_importe, vede_descuento)
-		SELECT 
-			DISTINCT VENTA_CODIGO,
-			VENTA_DESCUENTO_IMPORTE,
-			dtos.descu_id
-		FROM gd_esquema.maestra m
-		INNER JOIN GAME_OF_JOINS.descuento dtos 
-			ON m.VENTA_DESCUENTO_IMPORTE = dtos.descu_valor
-			AND m.VENTA_DESCUENTO_CONCEPTO = dtos.descu_concepto
-		WHERE m.VENTA_CODIGO IS NOT NULL
+	SELECT
+		DISTINCT VENTA_CODIGO,
+		VENTA_DESCUENTO_IMPORTE,
+		CASE
+			WHEN VENTA_MEDIO_ENVIO IS NOT NULL
+			AND VENTA_ENVIO_PRECIO = VENTA_DESCUENTO_IMPORTE THEN (
+			SELECT
+				descu_id
+			FROM
+				GAME_OF_JOINS.descuento
+			WHERE
+				descu_tipo = 'Envio Gratis')
+			WHEN VENTA_MEDIO_ENVIO IS NOT NULL
+			AND (VENTA_ENVIO_PRECIO IS NULL
+			OR VENTA_ENVIO_PRECIO = 0)
+			AND VENTA_MEDIO_ENVIO != 'Entrega en sucursal' THEN (
+			SELECT
+				descu_id
+			FROM
+				GAME_OF_JOINS.descuento
+			WHERE
+				descu_tipo = 'Envio Gratis')
+			WHEN VENTA_DESCUENTO_CONCEPTO IN ('Efectivo', 'Transferencia') THEN (
+			SELECT
+				descu_id
+			FROM
+				GAME_OF_JOINS.descuento
+			WHERE
+				descu_tipo = 'Medio Pago')
+			ELSE (
+			SELECT
+				descu_id
+			FROM
+				GAME_OF_JOINS.descuento
+			WHERE
+				descu_tipo = 'Especial')
+		END AS descu_id
+	FROM
+		gd_esquema.maestra
+	WHERE
+		VENTA_CODIGO IS NOT NULL
+		AND VENTA_DESCUENTO_CONCEPTO IS NOT NULL
 GO
 
 --medio_envio

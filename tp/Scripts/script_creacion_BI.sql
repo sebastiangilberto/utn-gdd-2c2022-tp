@@ -131,88 +131,133 @@ GO
  * - Tipo de envío 
  */
 
-CREATE TABLE GAME_OF_JOINS.BI_tiempo 
-  ( 
-	 tiem_id INT PRIMARY KEY IDENTITY(1, 1), 
-     tiem_anio INT,
-	 tiem_mes  INT,
-  )
-  
-CREATE TABLE GAME_OF_JOINS.BI_provincia
-  (
-	 prov_id INT PRIMARY KEY IDENTITY(1, 1), 
-     prov_descripcion NVARCHAR(255),
-  )
-  
-CREATE TABLE GAME_OF_JOINS.BI_cliente 
-  ( 
-     clie_codigo INT PRIMARY KEY IDENTITY(1, 1), 
-     clie_edad        NVARCHAR(255),
-  ) 
-
-CREATE TABLE GAME_OF_JOINS.BI_proveedor 
-  ( 
-     prove_cuit NVARCHAR(50) PRIMARY KEY, --pk
-  ) 
-  
+--canal
 CREATE TABLE GAME_OF_JOINS.BI_canal
   (
-	 prov_id INT PRIMARY KEY IDENTITY(1, 1), 
-     prov_descripcion NVARCHAR(255),
+	 id_canal INT PRIMARY KEY IDENTITY(1, 1), 
+     descripcion NVARCHAR(255),
   )
-  
+
+--cliente  
+CREATE TABLE GAME_OF_JOINS.BI_cliente 
+  ( 
+     id_cliente INT PRIMARY KEY IDENTITY(1, 1), 
+     rango_etario NVARCHAR(255) NOT NULL,
+  ) 
+
+--compra
+CREATE TABLE GAME_OF_JOINS.BI_compra
+  (
+	id_compra INT PRIMARY KEY IDENTITY(1, 1),
+	total DECIMAL(18,2) NOT NULL,
+	id_proveedor INT NOT NULL, --fk
+	id_tiempo INT NOT NULL, --fk
+  ) 
+
+--compra_producto
+CREATE TABLE GAME_OF_JOINS.BI_compra_producto
+  (
+	id_compra_producto INT PRIMARY KEY IDENTITY(1, 1),
+	precio_unitario DECIMAL(18,2) NOT NULL,
+	cantidad DECIMAL(18,0) NOT NULL,
+	id_producto INT NOT NULL, --fk
+	id_proveedor INT NOT NULL, --fk
+	id_tiempo INT NOT NULL, --fk
+  ) 
+
+--medio_pago
 CREATE TABLE GAME_OF_JOINS.BI_medio_pago
   (
-	 mepa_id INT PRIMARY KEY IDENTITY(1, 1), 
-     mepa_descripcion NVARCHAR(255),
+	 id_medio_pago INT PRIMARY KEY IDENTITY(1, 1), 
+     descripcion NVARCHAR(255) NOT NULL,
   )
-  
-CREATE TABLE GAME_OF_JOINS.BI_producto_categoria
-  (
-	 cate_id INT PRIMARY KEY IDENTITY(1, 1), 
-     cate_descripcion NVARCHAR(255),
-  )
-  
+
+--producto
 CREATE TABLE GAME_OF_JOINS.BI_producto
   (
-	 prod_id INT PRIMARY KEY IDENTITY(1, 1), 
-     prod_descripcion NVARCHAR(255),
+	 id_producto INT PRIMARY KEY IDENTITY(1, 1),
+	 codigo NVARCHAR(50) NOT NULL,
+     descripcion NVARCHAR(50) NOT NULL,
   )
-  
+
+--producto_categoria  
+CREATE TABLE GAME_OF_JOINS.BI_producto_categoria
+  (
+	 id_categoria INT PRIMARY KEY IDENTITY(1, 1), 
+     descripcion NVARCHAR(255),
+  )
+
+--proveedor
+CREATE TABLE GAME_OF_JOINS.BI_proveedor 
+  ( 
+  	 id_proveedor INT PRIMARY KEY IDENTITY(1, 1),
+  	 cuit NVARCHAR(50) NOT NULL,
+  ) 
+
+--provincia
+CREATE TABLE GAME_OF_JOINS.BI_provincia
+  (
+	 id_provincia INT PRIMARY KEY IDENTITY(1, 1), 
+     descripcion NVARCHAR(255),
+  )
+
+--tiempo
+CREATE TABLE GAME_OF_JOINS.BI_tiempo 
+  ( 
+	 id_tiempo INT PRIMARY KEY IDENTITY(1, 1), 
+     anio INT NOT NULL,
+	 mes  INT NOT NULL,
+  )
+
+--tipo_descuento
 CREATE TABLE GAME_OF_JOINS.BI_tipo_descuento
   (
-	 descu_id INT PRIMARY KEY IDENTITY(1, 1), 
-     descu_descripcion NVARCHAR(255),
+	 id_tipo_descuento INT PRIMARY KEY IDENTITY(1, 1), 
+     descripcion NVARCHAR(255) NOT NULL,
   )
-  
+
+--tipo_envio
 CREATE TABLE GAME_OF_JOINS.BI_tipo_envio
   (
-	 env_id INT PRIMARY KEY IDENTITY(1, 1), 
-     env_descripcion NVARCHAR(255),
+	 id_tipo_envio INT PRIMARY KEY IDENTITY(1, 1), 
+     descripcion NVARCHAR(255) NOT NULL,
   )
-  
-CREATE TABLE GAME_OF_JOINS.BI_ventas
+
+-- venta
+CREATE TABLE GAME_OF_JOINS.BI_venta
   (
-	vent_codigo -- pk
-	vent_total
-	vent_tiempo --fk
-	vent_cliente --fk
-	vent_provincia --fk
-	vent_canal --fk
-	vent_producto --fk
-	vent_producto_categoria --fk
-	vent_tipo_descuento --fk
-	vent_tipo_envio --fk
-	vent_medio_pago --fk
+	id_venta INT PRIMARY KEY IDENTITY(1, 1),
+	total DECIMAL(18,2) NOT NULL,
+	valor_envio DECIMAL(18,2) NOT NULL,
+	mepa_costo DECIMAL(18,2) NOT NULL,
+	mepa_descuento DECIMAL(18,2) NOT NULL,
+	id_tiempo INT NOT NULL, --fk
+	id_cliente INT NOT NULL, --fk
+	id_provincia INT NOT NULL, --fk
+	id_canal INT NOT NULL, --fk
+	id_tipo_envio INT NOT NULL, --fk
+	id_medio_pago INT NOT NULL, --fk
+  ) 
+
+--venta_descuento
+CREATE TABLE GAME_OF_JOINS.BI_venta_descuento
+  (
+	id_venta_descuento INT PRIMARY KEY IDENTITY(1, 1),
+	id_venta INT NOT NULL, --fk
+	id_tipo_descuento INT NOT NULL, --fk
+	importe DECIMAL(18,2) NOT NULL, --fk
   )  
-  
-CREATE TABLE GAME_OF_JOINS.BI_compras
+
+--venta_producto
+CREATE TABLE GAME_OF_JOINS.BI_venta_producto
   (
-	comp_codigo --pk
-	comp_total
-	comp_tiempo --fk
-	comp_proveedor --fk
-	comp_medio_pago --fk
+	id_venta_producto INT PRIMARY KEY IDENTITY(1, 1),
+	id_producto INT NOT NULL,
+	id_producto_categoria INT NOT NULL, --fk
+	id_tiempo INT NOT NULL, --fk
+	id_cliente INT NOT NULL, --fk
+	precio DECIMAL(18,2) NOT NULL, --fk
+	cantidad DECIMAL(18,2) NOT NULL, --fk
   )  
 
   
@@ -226,6 +271,7 @@ CREATE TABLE GAME_OF_JOINS.BI_compras
 ----------- Funciones auxiliares ---------------
 ------------------------------------------------
 
+-- devuelve el rango etario en base a una fecha
 IF Object_id('GAME_OF_JOINS.BI_Obtener_Rango_Edad') IS NOT NULL 
   DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Rango_Edad 
 
@@ -253,6 +299,38 @@ AS
 
       RETURN '' 
   END 
+
+GO 
+
+-- devuelve el id_cliente de bi en base al id de modelo  
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Cliente') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Cliente 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Cliente(@id_cliente_modelo INT) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_cliente AS INT 
+      DECLARE @fecha_nac AS DATE 
+
+		SELECT
+			@fecha_nac = clie_fecha_nac
+		FROM
+			GAME_OF_JOINS.cliente
+		WHERE
+			clie_id = @id_cliente_modelo 
+
+		SELECT
+			@id_cliente = id_cliente
+		FROM
+			GAME_OF_JOINS.BI_cliente
+		WHERE
+			rango_etario = GAME_OF_JOINS.BI_Obtener_Rango_Etario(@fecha_nac)
+
+      RETURN @id_cliente 
+  END; 
 
 GO 
 
@@ -295,7 +373,7 @@ GO
 CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Cliente 
 AS 
     INSERT INTO GAME_OF_JOINS.BI_cliente 
-                (edad) 
+                (rango_etario) 
 	SELECT
 		DISTINCT GAME_OF_JOINS.BI_obtener_rango_edad(clie_fecha_nac)
 	FROM
@@ -312,7 +390,7 @@ GO
 CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Canal 
 AS 
     INSERT INTO GAME_OF_JOINS.BI_canal 
-                (cana_descripcion) 
+                (descripcion) 
 	SELECT
 		DISTINCT cana_canal
 	FROM
@@ -320,6 +398,77 @@ AS
 
 GO 
 
+--medio_pago 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Medio_Pago') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Medio_Pago 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Medio_Pago 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_medio_pago 
+                (descripcion) 
+	SELECT
+		DISTINCT mepa_medio_pago
+	FROM
+		GAME_OF_JOINS.medio_pago
+
+GO 
+
+--tipo_envio 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Tipo_Envio') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Envio 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Envio 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_tipo_envio
+                (descripcion) 
+	SELECT
+		DISTINCT menv_medio_envio
+	FROM
+		GAME_OF_JOINS.medio_envio
+
+GO 
+
+--tipo_descuento
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Tipo_Descuento') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Descuento 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Descuento 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_tipo_descuento
+                (descripcion) 
+	SELECT
+		DISTINCT descu_tipo
+	FROM
+		GAME_OF_JOINS.descuento
+
+GO
+
+--venta_descuento
+/*
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta_Descuento') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Descuento 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Descuento 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_venta_descuento
+                (id_venta, id_tipo_descuento, importe) 
+	SELECT
+		GAME_OF_JOINS.BI_Obtener_Id_Venta(vede_venta_codigo),
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento(vede_descuento),
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento(vede_descuento),
+	FROM
+		GAME_OF_JOINS.venta_descuento
+
+GO
+*/
 --proveedor 
 IF Object_id('GAME_OF_JOINS.BI_Migrar_Proveedor') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Proveedor 
@@ -329,7 +478,7 @@ GO
 CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Proveedor 
 AS 
     INSERT INTO GAME_OF_JOINS.BI_proveedor 
-                (prove_cuit) 
+                (cuit) 
 	SELECT
 		DISTINCT prove_cuit
 	FROM
@@ -337,6 +486,65 @@ AS
 
 GO 
 
+--producto_categoria 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Producto_Categoria') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto_Categoria 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto_Categoria
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_producto_categoria
+                (descripcion) 
+	SELECT
+		DISTINCT pcat_categoria
+	FROM
+		GAME_OF_JOINS.producto_categoria
+
+GO 
+
+--provincia 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Provincia') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Provincia 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Provincia
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_provincia
+                (descripcion) 
+	SELECT
+		DISTINCT prov_provincia
+	FROM
+		GAME_OF_JOINS.provincia
+
+GO 
+
+
+--provincia 
+/*
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_venta
+                (total, id_cliente, id_provincia, id_canal, id_tipo_envio, id_medio_pago) 
+		
+	SELECT
+		v.vent_total,
+		GAME_OF_JOINS.BI_Obtener_Id_Cliente(v.vent_cliente),
+		GAME_OF_JOINS.BI_Obtener_Id_Provincia(v.vent_cliente),
+		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo),
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Envio(v.vent_codigo),
+		GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago(v.vent_venta_medio_pago),
+	FROM
+		GAME_OF_JOINS.venta v
+
+GO 
+*/
 ------------------------------------------------
 ---------- Vistas para modelo BI ---------------
 ------------------------------------------------
@@ -405,7 +613,17 @@ GO
 EXEC GAME_OF_JOINS.BI_Migrar_Tiempo
 EXEC GAME_OF_JOINS.BI_Migrar_Cliente
 EXEC GAME_OF_JOINS.BI_Migrar_Canal
+--EXEC GAME_OF_JOINS.BI_Migrar_Producto
+EXEC GAME_OF_JOINS.BI_Migrar_Producto_Categoria
+EXEC GAME_OF_JOINS.BI_Migrar_Provincia
 EXEC GAME_OF_JOINS.BI_Migrar_Proveedor
+EXEC GAME_OF_JOINS.BI_Migrar_Medio_Pago
+EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Envio
+EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Descuento
+--EXEC GAME_OF_JOINS.BI_Migrar_Venta
+--EXEC GAME_OF_JOINS.BI_Migrar_Compra
+--EXEC GAME_OF_JOINS.BI_Migrar_Venta_Producto
+--EXEC GAME_OF_JOINS.BI_Migrar_Compra_Producto
 
 GO
 
@@ -420,3 +638,27 @@ GO
 ------------------------------------------------
 ------------------ Tests -----------------------
 ------------------------------------------------
+
+IF Object_id('GAME_OF_JOINS.BI_table_row_count') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_table_row_count
+GO 
+
+CREATE OR ALTER VIEW GAME_OF_JOINS.BI_table_row_count
+AS
+	SELECT
+		o.NAME as table_name,
+		i.rowcnt as row_count
+	FROM
+		sysindexes AS i
+	INNER JOIN sysobjects AS o ON
+		i.id = o.id
+	WHERE
+		i.indid < 2
+		AND OBJECTPROPERTY(o.id,
+		'IsMSShipped') = 0
+		AND o.name LIKE 'BI_%'
+GO 
+
+--SELECT * FROM GAME_OF_JOINS.BI_table_row_count ORDER BY table_name ASC
+
+DROP VIEW GAME_OF_JOINS.BI_table_row_count
