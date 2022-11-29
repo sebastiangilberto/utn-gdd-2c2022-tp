@@ -62,9 +62,7 @@ Ya podemos hacer consultas libremente sobre el modelo OLPT y el OLAP
 
 ### Diagrama de entidad relación
 
-[![Diagrama entidad relación](tp/der/der_2.jpeg)](https://github.com/sebastiangilberto/utn-gdd-2c2022-tp/raw/main/tp/der/der_2.svg)
-
-![Diagrama entidad relación](tp/der/der_3.svg)
+[![Diagrama entidad relación](tp/der/der_2.svg)](https://github.com/sebastiangilberto/utn-gdd-2c2022-tp/raw/main/tp/der/der_2.svg)
 
 ### LucidChart
 
