@@ -547,6 +547,8 @@ AS
 			GAME_OF_JOINS.venta_canal vc
 		INNER JOIN GAME_OF_JOINS.canal c ON
 			vc.veca_canal = c.cana_id
+		WHERE
+			vc.veca_venta_codigo = @codigo_venta_modelo
       
 		SELECT
 			@id_canal = id_canal
@@ -983,6 +985,7 @@ GO
  * compras, menos los costos de transacción totales aplicados asociados los
  * medios de pagos utilizados en las mismas.
  */
+
 
 /*
  * 
