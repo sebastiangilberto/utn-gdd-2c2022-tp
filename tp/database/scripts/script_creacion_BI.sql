@@ -1084,13 +1084,13 @@ GO
  * por mes.
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario') IS NOT 
+IF Object_id('GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario') IS NOT 
    NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario 
+  DROP VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario 
+CREATE VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
 AS 
 	WITH ranking_categorias_por_edad AS (
 	SELECT
