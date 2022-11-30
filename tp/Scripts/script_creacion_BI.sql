@@ -25,7 +25,7 @@ IF Object_id('GAME_OF_JOINS.BI_Erase_All_Foreign_Keys') IS NOT NULL
 
 GO 
 
-CREATE PROCEDURE GAME_OF_JOINS.BI_Erase_All_Foreign_Keys
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.BI_Erase_All_Foreign_Keys
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR 
@@ -53,7 +53,7 @@ IF Object_id('GAME_OF_JOINS.BI_Drop_All_Tables') IS NOT NULL
 
 GO 
 
-CREATE PROCEDURE GAME_OF_JOINS.BI_Drop_All_Tables
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.BI_Drop_All_Tables
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR  
@@ -79,7 +79,7 @@ IF Object_id('GAME_OF_JOINS.BI_Drop_All_Procedures') IS NOT NULL
 
 GO 
 
-CREATE PROCEDURE GAME_OF_JOINS.BI_Drop_All_Procedures
+CREATE OR ALTER PROCEDURE GAME_OF_JOINS.BI_Drop_All_Procedures
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR  
@@ -1032,6 +1032,43 @@ GO
  * que los precios siempre van en aumento.
  */
 
+IF Object_id('GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+AS 
+	WITH aumentos_proveedores AS (
+	SELECT
+		tie.anio AS anio,
+		p.cuit AS proveedor,
+		MAX(precio_unitario) AS maximo,
+		MIN(precio_unitario) AS minimo,
+		(MAX(precio_unitario) - MIN(precio_unitario)) / MIN(precio_unitario) AS porcentaje_aumento
+	FROM
+		GAME_OF_JOINS.BI_compra_producto cp
+	INNER JOIN GAME_OF_JOINS.BI_Proveedor p ON
+		cp.id_proveedor = p.id_proveedor
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie
+		ON cp.id_tiempo = tie.id_tiempo
+	GROUP BY
+		tie.anio,
+		p.cuit,
+		cp.id_producto )
+	SELECT
+		anio,
+		proveedor,
+		AVG(porcentaje_aumento) AS aumento_promedio
+	FROM
+		aumentos_proveedores
+	GROUP BY
+		anio,
+		proveedor
+
+GO
+
 /*
  * Los 3 productos con mayor cantidad de reposición por mes. 
  */
@@ -1116,3 +1153,4 @@ GO
 ------------------------------------------------
 
 SELECT * FROM GAME_OF_JOINS.BI_VW_productos_mayor_reposicion ORDER BY mes, anio, cantidad DESC
+SELECT * FROM GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor ORDER BY anio ASC, proveedor ASC
