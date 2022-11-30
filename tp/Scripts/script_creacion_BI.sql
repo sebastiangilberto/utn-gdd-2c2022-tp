@@ -1190,13 +1190,13 @@ GO
  * total de envío mensuales.
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual') IS NOT 
+IF Object_id('GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual') IS NOT 
    NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+CREATE VIEW GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual 
 AS 
 	SELECT
 		tie.anio AS anio,
@@ -1238,13 +1238,13 @@ GO
  * Valor promedio de envío por Provincia por Medio De Envío anual.
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia') IS NOT 
+IF Object_id('GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia') IS NOT 
    NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+CREATE VIEW GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia 
 AS 
 	SELECT
 		tie.anio AS anio,
@@ -1272,13 +1272,13 @@ GO
  * que los precios siempre van en aumento.
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor') IS NOT 
+IF Object_id('GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor') IS NOT 
    NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+CREATE VIEW GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor 
 AS 
 	WITH aumentos_proveedores AS (
 	SELECT
@@ -1313,13 +1313,13 @@ GO
  * Los 3 productos con mayor cantidad de reposición por mes. 
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_productos_mayor_reposicion') IS NOT 
+IF Object_id('GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion') IS NOT 
    NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+CREATE VIEW GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion 
 AS 
 	WITH ranking_productos_reposicion AS (
 	    SELECT
@@ -1388,18 +1388,16 @@ EXEC GAME_OF_JOINS.BI_Drop_All_Procedures
 
 GO
 
-
-=======
 ------------------------------------------------
 --------------- Test Views ---------------------
 ------------------------------------------------
 
-SELECT * FROM GAME_OF_JOINS.BI_VW_Ganancias_Mensuales ORDER BY anio ASC, mes ASC, canal_de_venta ASC
-SELECT * FROM GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual ORDER BY anio ASC, rentabilidad DESC
-SELECT * FROM GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago ORDER BY anio ASC, mes ASC, medio_de_pago ASC
-SELECT * FROM GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo ORDER BY anio ASC, mes ASC, tipo_de_descuento ASC
-SELECT * FROM GAME_OF_JOINS.BI_VW_productos_mayor_reposicion ORDER BY mes, anio, cantidad DESC
-SELECT * FROM GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor ORDER BY anio ASC, proveedor ASC
-SELECT * FROM GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia ORDER BY anio, provincia, medio_envio
-SELECT * FROM GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual ORDER BY anio, mes, provincia
-SELECT * FROM GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario ORDER BY anio, mes, rango_etario, categoria, cantidad_vendida DESC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Ganancias_Mensuales ORDER BY anio ASC, mes ASC, canal_de_venta ASC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual ORDER BY anio ASC, rentabilidad DESC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago ORDER BY anio ASC, mes ASC, medio_de_pago ASC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo ORDER BY anio ASC, mes ASC, tipo_de_descuento ASC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion ORDER BY mes, anio, cantidad DESC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor ORDER BY anio ASC, proveedor ASC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia ORDER BY anio, provincia, medio_envio
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual ORDER BY anio, mes, provincia
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario ORDER BY anio, mes, rango_etario, categoria, cantidad_vendida DESC
