@@ -583,6 +583,8 @@ AS
 			ve.veen_medio_habilitado = hab.menh_id
 		INNER JOIN GAME_OF_JOINS.medio_envio me ON
 			hab.menh_medio_envio = me.menv_id
+		WHERE
+			ve.veen_venta_codigo = @codigo_venta_modelo
       
 		SELECT
 			@id_tipo_envio = id_tipo_envio
@@ -615,6 +617,7 @@ AS
 			GAME_OF_JOINS.venta_medio_pago vmp
 		INNER JOIN GAME_OF_JOINS.medio_pago mp ON
 			vmp.vmep_medio_pago = mp.mepa_id
+		WHERE vmp.vmep_id = @venta_medio_pago_modelo
       
 		SELECT
 			@id_medio_pago = id_medio_pago
@@ -986,6 +989,25 @@ GO
  * medios de pagos utilizados en las mismas.
  */
 
+ IF Object_id('GAME_OF_JOINS.BI_VW_Ganancias_Mensuales') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
+AS
+	SELECT		ti.anio 'Año',
+				ti.mes 'Mes',
+				ca.descripcion 'Canal de venta',
+				ISNULL(SUM(ve.total), 0) - ISNULL(SUM(ve.mepa_costo), 0) -	ISNULL((SELECT SUM(co.total) FROM GAME_OF_JOINS.BI_compra co WHERE co.id_tiempo = ve.id_tiempo), 0) 'Ganancia mensual'
+	FROM		GAME_OF_JOINS.BI_venta ve
+	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
+	ON			ve.id_tiempo = ti.id_tiempo
+	INNER JOIN	GAME_OF_JOINS.BI_canal ca
+	ON			ve.id_canal = ca.id_canal
+	GROUP BY	ve.id_tiempo, ti.anio, ti.mes, ve.id_canal, ca.descripcion
+GO
+
 
 /*
  * 
@@ -995,18 +1017,102 @@ GO
  * (compras) durante el periodo, todo esto sobre dichos ingresos.
  * Valor expresado en porcentaje.
  * Para simplificar, no es necesario tener en cuenta los descuentos aplicados.
- */ 
+ */
+
+--SELECT		pr.codigo,
+--			ti.anio,
+--			ISNULL(SUM(vp.precio * vp.cantidad), 0) INGRESOS,
+--			ISNULL((
+--				SELECT			SUM(cp.precio_unitario * cp.cantidad)
+--				FROM			GAME_OF_JOINS.BI_compra_producto cp
+--				WHERE			cp.id_producto = vp.id_producto AND cp.id_tiempo = vp.id_tiempo
+--				GROUP BY		cp.id_producto, cp.id_tiempo
+--			), 0) AS EGRESOS
+--FROM		GAME_OF_JOINS.BI_venta_producto vp
+--INNER JOIN	GAME_OF_JOINS.BI_producto pr
+--ON			vp.id_producto = pr.id_producto
+--INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
+--ON			vp.id_tiempo = ti.id_tiempo
+--GROUP BY	vp.id_producto, pr.codigo, vp.id_tiempo, ti.anio, ti.mes
+
+
+--UAKB76XZ4Q43OMUIJ	2022	25020191.2800	26744400.48
+--PT4Z0MUEI6POBVSHX	2022	18582853.3400	18582853.34
+--IB3G2HMYPORVBWHHM	2022	6133221.5700	6133221.57
+--8OMJPIUR7AH1QSXJR	2022	5528927.8400	5147174.72
+--MBREASJ1U0R1S5UAJ	2022	8543303.5800	8919798.78
+
+
+
+
+
+--WITH ranking_productos_reposicion AS (
+--	    SELECT
+--		p.codigo AS producto_codigo,
+--		p.descripcion AS producto_descripcion,
+--		tie.anio AS anio,
+--		tie.mes AS mes,
+--		SUM(cp.cantidad) AS cantidad,
+--		ROW_NUMBER()
+--	    OVER (
+--	        PARTITION BY tie.mes
+--	        ORDER BY SUM(cp.cantidad) DESC
+--	    ) AS ranking 
+--	FROM
+--		GAME_OF_JOINS.BI_compra_producto cp
+--		INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+--		cp.id_tiempo = tie.id_tiempo
+--		INNER JOIN GAME_OF_JOINS.BI_producto p
+--ON cp.id_producto = p.id_producto
+--	GROUP BY
+--		p.codigo,
+--		p.descripcion,
+--		tie.anio,
+--		tie.mes
+--	)
+--	SELECT
+--		anio,
+--		mes,
+--		producto_codigo,
+--		producto_descripcion,
+--		cantidad
+--	FROM
+--		ranking_productos_reposicion
+--	WHERE
+--		ranking <= 3
 
 /*
  * Las 5 categorías de productos más vendidos por rango etario de clientes
  * por mes.
  */
 
+
 /*
  * Total de Ingresos por cada medio de pago por mes, descontando los costos
  * por medio de pago (en caso que aplique) y descuentos por medio de pago
  * (en caso que aplique)
  */
+
+  IF Object_id('GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
+AS
+	SELECT		ti.anio 'Año',
+				ti.mes 'Mes',
+				mp.descripcion 'Medio de pago',
+				SUM(ve.total) - SUM(ve.mepa_costo) - SUM(ve.mepa_descuento) 'Ingreso'
+	FROM		GAME_OF_JOINS.BI_venta ve
+	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
+	ON			ve.id_tiempo = ti.id_tiempo
+	INNER JOIN	GAME_OF_JOINS.BI_medio_pago mp
+	ON			ve.id_medio_pago = mp.id_medio_pago
+	GROUP BY	ve.id_tiempo, ti.anio, ti.mes, mp.id_medio_pago, mp.descripcion
+GO
+
+
 
 
 /* 
