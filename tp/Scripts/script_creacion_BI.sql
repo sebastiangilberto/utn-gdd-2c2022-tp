@@ -25,7 +25,7 @@ IF Object_id('GAME_OF_JOINS.BI_Erase_All_Foreign_Keys') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.BI_Erase_All_Foreign_Keys
+CREATE PROCEDURE GAME_OF_JOINS.BI_Erase_All_Foreign_Keys
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR 
@@ -53,7 +53,7 @@ IF Object_id('GAME_OF_JOINS.BI_Drop_All_Tables') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.BI_Drop_All_Tables
+CREATE PROCEDURE GAME_OF_JOINS.BI_Drop_All_Tables
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR  
@@ -79,7 +79,7 @@ IF Object_id('GAME_OF_JOINS.BI_Drop_All_Procedures') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.BI_Drop_All_Procedures
+CREATE PROCEDURE GAME_OF_JOINS.BI_Drop_All_Procedures
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR  
@@ -1036,6 +1036,51 @@ GO
  * Los 3 productos con mayor cantidad de reposición por mes. 
  */
 
+IF Object_id('GAME_OF_JOINS.BI_VW_productos_mayor_reposicion') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+AS 
+	WITH ranking_productos_reposicion AS (
+	    SELECT
+		p.codigo AS producto_codigo,
+		p.descripcion AS producto_descripcion,
+		tie.anio AS anio,
+		tie.mes AS mes,
+		SUM(cp.cantidad) AS cantidad,
+		ROW_NUMBER()
+	    OVER (
+	        PARTITION BY tie.mes
+	        ORDER BY SUM(cp.cantidad) DESC
+	    ) AS ranking 
+	FROM
+		GAME_OF_JOINS.BI_compra_producto cp
+		INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		cp.id_tiempo = tie.id_tiempo
+		INNER JOIN GAME_OF_JOINS.BI_producto p
+		ON cp.id_producto = p.id_producto
+	GROUP BY
+		p.codigo,
+		p.descripcion,
+		tie.anio,
+		tie.mes
+	)
+	SELECT
+		anio,
+		mes,
+		producto_codigo,
+		producto_descripcion,
+		cantidad
+	FROM
+		ranking_productos_reposicion
+	WHERE
+		ranking <= 3
+
+GO 
+
 ------------------------------------------------
 ------------ Migracion de datos ----------------
 ------------------------------------------------
@@ -1065,3 +1110,9 @@ GO
 EXEC GAME_OF_JOINS.BI_Drop_All_Procedures
 
 GO
+
+------------------------------------------------
+--------------- Test Views ---------------------
+------------------------------------------------
+
+SELECT * FROM GAME_OF_JOINS.BI_VW_productos_mayor_reposicion ORDER BY mes, anio, cantidad DESC
