@@ -60,9 +60,13 @@ Luego podemos crear el Modelo BI corriendo
 
 Ya podemos hacer consultas libremente sobre el modelo OLPT y el OLAP
 
-### Diagrama de entidad relación
+### DER Modelo Datos
 
-[![Diagrama entidad relación](tp/der/der_2.svg)](https://github.com/sebastiangilberto/utn-gdd-2c2022-tp/raw/main/tp/der/der_2.svg)
+[![DER Modelo Datos](tp/entregas/3_modelo_bi/der_datos_3.svg)](https://github.com/sebastiangilberto/utn-gdd-2c2022-tp/raw/main/tp/entregas/3_modelo_bi/der_datos_3.svg)
+
+### DER Modelo BI
+
+[![DER Modelo BI](tp/entregas/3_modelo_bi/der_BI.svg)](https://github.com/sebastiangilberto/utn-gdd-2c2022-tp/raw/main/tp/entregas/3_modelo_bi/der_BI.svg)
 
 ### LucidChart
 
