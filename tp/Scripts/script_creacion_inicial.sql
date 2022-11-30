@@ -1277,7 +1277,7 @@ AS
 	SELECT
 		DISTINCT VENTA_CODIGO,
 		VENTA_ENVIO_PRECIO,
-		menv.menv_id
+		meh.menh_id
 	FROM
 		gd_esquema.maestra m
 	INNER JOIN GAME_OF_JOINS.medio_envio menv ON
