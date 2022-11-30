@@ -1025,6 +1025,40 @@ GO
  * total de envío mensuales.
  */
 
+IF Object_id('GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+AS 
+	SELECT
+		tie.anio AS anio,
+		tie.mes AS mes,
+		p.descripcion AS provincia,
+		100 * COUNT(*) / (
+		SELECT
+			COUNT(*)
+		FROM
+			GAME_OF_JOINS.BI_venta v1
+		INNER JOIN GAME_OF_JOINS.BI_tiempo tie1 ON
+			v1.id_tiempo = tie1.id_tiempo
+		WHERE
+			tie1.anio = tie.anio
+			AND tie1.mes = tie.mes)  AS porcentaje_envios
+	FROM
+		GAME_OF_JOINS.BI_venta v
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		v.id_tiempo = tie.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_provincia p ON
+		v.id_provincia = p.id_provincia
+	GROUP BY
+		tie.anio,
+		tie.mes,
+		p.descripcion
+GO
+
 /* 
  * Valor promedio de envío por Provincia por Medio De Envío anual.
  */
@@ -1185,4 +1219,5 @@ GO
 
 SELECT * FROM GAME_OF_JOINS.BI_VW_productos_mayor_reposicion ORDER BY mes, anio, cantidad DESC
 SELECT * FROM GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor ORDER BY anio ASC, proveedor ASC
-SELECT * FROM GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia ORDER BY anio, provincia, medio_envio 
+SELECT * FROM GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia ORDER BY anio, provincia, medio_envio
+SELECT * FROM GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual ORDER BY anio, mes, provincia
