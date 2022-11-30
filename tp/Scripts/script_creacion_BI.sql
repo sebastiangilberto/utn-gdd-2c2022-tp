@@ -617,7 +617,8 @@ AS
 			GAME_OF_JOINS.venta_medio_pago vmp
 		INNER JOIN GAME_OF_JOINS.medio_pago mp ON
 			vmp.vmep_medio_pago = mp.mepa_id
-		WHERE vmp.vmep_id = @venta_medio_pago_modelo
+		WHERE
+			vmp.vmep_id = @venta_medio_pago_modelo
       
 		SELECT
 			@id_medio_pago = id_medio_pago
@@ -1083,6 +1084,49 @@ GO
  * por mes.
  */
 
+IF Object_id('GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
+AS 
+	WITH ranking_categorias_por_edad AS (
+	SELECT
+		tie.anio AS anio,
+		tie.mes AS mes,
+		c.rango_etario AS rango_etario,
+		pc.descripcion AS categoria,
+		SUM(vp.cantidad) AS cantidad_vendida,
+		ROW_NUMBER() OVER (PARTITION BY tie.mes, c.rango_etario
+	ORDER BY
+		SUM(vp.cantidad) DESC) AS ranking
+	FROM
+		GAME_OF_JOINS.BI_venta_producto vp
+	INNER JOIN GAME_OF_JOINS.BI_producto_categoria pc ON
+		vp.id_categoria = pc.id_categoria
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		vp.id_tiempo = tie.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_cliente c ON
+		vp.id_cliente = c.id_cliente
+	GROUP BY
+		tie.anio,
+		tie.mes,
+		c.rango_etario,
+		pc.descripcion )
+	SELECT
+		anio,
+		mes,
+		rango_etario,
+		categoria,
+		cantidad_vendida
+	FROM
+		ranking_categorias_por_edad
+	WHERE
+		ranking <= 5
+
+GO
 
 /*
  * Total de Ingresos por cada medio de pago por mes, descontando los costos
@@ -1146,9 +1190,80 @@ GO
  * total de envío mensuales.
  */
 
+IF Object_id('GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+AS 
+	SELECT
+		tie.anio AS anio,
+		tie.mes AS mes,
+		p.descripcion AS provincia,
+		COUNT(*) AS cantidad_enviada,
+		(SELECT
+			COUNT(*)
+		FROM
+			GAME_OF_JOINS.BI_venta v1
+		INNER JOIN GAME_OF_JOINS.BI_tiempo tie1 ON
+			v1.id_tiempo = tie1.id_tiempo
+		WHERE
+			tie1.anio = tie.anio
+			AND tie1.mes = tie.mes) AS total_enviado,
+		ROUND(100 * 1.0 * COUNT(*) / (
+		SELECT
+			COUNT(*)
+		FROM
+			GAME_OF_JOINS.BI_venta v1
+		INNER JOIN GAME_OF_JOINS.BI_tiempo tie1 ON
+			v1.id_tiempo = tie1.id_tiempo
+		WHERE
+			tie1.anio = tie.anio
+			AND tie1.mes = tie.mes),2) AS porcentaje_envios
+	FROM
+		GAME_OF_JOINS.BI_venta v
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		v.id_tiempo = tie.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_provincia p ON
+		v.id_provincia = p.id_provincia
+	GROUP BY
+		tie.anio,
+		tie.mes,
+		p.descripcion
+GO
+
 /* 
  * Valor promedio de envío por Provincia por Medio De Envío anual.
  */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+AS 
+	SELECT
+		tie.anio AS anio,
+		p.descripcion AS provincia,
+		te.descripcion AS medio_envio,
+		AVG(v.valor_envio) AS valor_promedio_envio
+	FROM
+		GAME_OF_JOINS.BI_venta v
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		v.id_tiempo = tie.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_tipo_envio te ON
+		v.id_tipo_envio = te.id_tipo_envio
+	INNER JOIN GAME_OF_JOINS.BI_provincia p ON
+		v.id_provincia = p.id_provincia
+	GROUP BY
+		tie.anio,
+		p.descripcion,
+		te.descripcion
+GO
 
 /*
  * Aumento promedio de precios de cada proveedor anual. Para calcular este
@@ -1157,9 +1272,91 @@ GO
  * que los precios siempre van en aumento.
  */
 
+IF Object_id('GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+AS 
+	WITH aumentos_proveedores AS (
+	SELECT
+		tie.anio AS anio,
+		p.cuit AS proveedor,
+		MAX(precio_unitario) AS maximo,
+		MIN(precio_unitario) AS minimo,
+		(MAX(precio_unitario) - MIN(precio_unitario)) / MIN(precio_unitario) * 100 AS porcentaje_aumento
+	FROM
+		GAME_OF_JOINS.BI_compra_producto cp
+	INNER JOIN GAME_OF_JOINS.BI_Proveedor p ON
+		cp.id_proveedor = p.id_proveedor
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie
+		ON cp.id_tiempo = tie.id_tiempo
+	GROUP BY
+		tie.anio,
+		p.cuit,
+		cp.id_producto )
+	SELECT
+		anio,
+		proveedor,
+		ROUND(AVG(porcentaje_aumento), 2) AS aumento_promedio
+	FROM
+		aumentos_proveedores
+	GROUP BY
+		anio,
+		proveedor
+
+GO
+
 /*
  * Los 3 productos con mayor cantidad de reposición por mes. 
  */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_productos_mayor_reposicion') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+AS 
+	WITH ranking_productos_reposicion AS (
+	    SELECT
+		p.codigo AS producto_codigo,
+		p.descripcion AS producto_descripcion,
+		tie.anio AS anio,
+		tie.mes AS mes,
+		SUM(cp.cantidad) AS cantidad,
+		ROW_NUMBER()
+	    OVER (
+	        PARTITION BY tie.mes
+	        ORDER BY SUM(cp.cantidad) DESC
+	    ) AS ranking 
+	FROM
+		GAME_OF_JOINS.BI_compra_producto cp
+		INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		cp.id_tiempo = tie.id_tiempo
+		INNER JOIN GAME_OF_JOINS.BI_producto p
+		ON cp.id_producto = p.id_producto
+	GROUP BY
+		p.codigo,
+		p.descripcion,
+		tie.anio,
+		tie.mes
+	)
+	SELECT
+		anio,
+		mes,
+		producto_codigo,
+		producto_descripcion,
+		cantidad
+	FROM
+		ranking_productos_reposicion
+	WHERE
+		ranking <= 3
+
+GO 
 
 ------------------------------------------------
 ------------ Migracion de datos ----------------
@@ -1191,7 +1388,18 @@ EXEC GAME_OF_JOINS.BI_Drop_All_Procedures
 
 GO
 
---SELECT * FROM GAME_OF_JOINS.BI_VW_Ganancias_Mensuales ORDER BY anio ASC, mes ASC, canal_de_venta ASC
---SELECT * FROM GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual ORDER BY anio ASC, rentabilidad DESC
---SELECT * FROM GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago ORDER BY anio ASC, mes ASC, medio_de_pago ASC
---SELECT * FROM GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo ORDER BY anio ASC, mes ASC, tipo_de_descuento ASC
+
+=======
+------------------------------------------------
+--------------- Test Views ---------------------
+------------------------------------------------
+
+SELECT * FROM GAME_OF_JOINS.BI_VW_Ganancias_Mensuales ORDER BY anio ASC, mes ASC, canal_de_venta ASC
+SELECT * FROM GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual ORDER BY anio ASC, rentabilidad DESC
+SELECT * FROM GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago ORDER BY anio ASC, mes ASC, medio_de_pago ASC
+SELECT * FROM GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo ORDER BY anio ASC, mes ASC, tipo_de_descuento ASC
+SELECT * FROM GAME_OF_JOINS.BI_VW_productos_mayor_reposicion ORDER BY mes, anio, cantidad DESC
+SELECT * FROM GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor ORDER BY anio ASC, proveedor ASC
+SELECT * FROM GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia ORDER BY anio, provincia, medio_envio
+SELECT * FROM GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual ORDER BY anio, mes, provincia
+SELECT * FROM GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario ORDER BY anio, mes, rango_etario, categoria, cantidad_vendida DESC

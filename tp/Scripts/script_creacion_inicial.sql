@@ -25,7 +25,7 @@ IF Object_id('GAME_OF_JOINS.Erase_All_Foreign_Keys') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Erase_All_Foreign_Keys
+CREATE PROCEDURE GAME_OF_JOINS.Erase_All_Foreign_Keys
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR 
@@ -52,7 +52,7 @@ IF Object_id('GAME_OF_JOINS.Drop_All_Tables') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Drop_All_Tables
+CREATE PROCEDURE GAME_OF_JOINS.Drop_All_Tables
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR  
@@ -77,7 +77,7 @@ IF Object_id('GAME_OF_JOINS.Drop_All_Procedures') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.Drop_All_Procedures
+CREATE PROCEDURE GAME_OF_JOINS.Drop_All_Procedures
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR  
@@ -1277,7 +1277,7 @@ AS
 	SELECT
 		DISTINCT VENTA_CODIGO,
 		VENTA_ENVIO_PRECIO,
-		menv.menv_id
+		meh.menh_id
 	FROM
 		gd_esquema.maestra m
 	INNER JOIN GAME_OF_JOINS.medio_envio menv ON
