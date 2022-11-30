@@ -996,10 +996,10 @@ GO
 
 CREATE VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
 AS
-	SELECT		ti.anio 'Año',
-				ti.mes 'Mes',
-				ca.descripcion 'Canal de venta',
-				ISNULL(SUM(ve.total), 0) - ISNULL(SUM(ve.mepa_costo), 0) -	ISNULL((SELECT SUM(co.total) FROM GAME_OF_JOINS.BI_compra co WHERE co.id_tiempo = ve.id_tiempo), 0) 'Ganancia mensual'
+	SELECT		ti.anio anio,
+				ti.mes mes,
+				ca.descripcion canal_de_venta,
+				ISNULL(SUM(ve.total), 0) - ISNULL(SUM(ve.mepa_costo), 0) -	ISNULL((SELECT SUM(co.total) FROM GAME_OF_JOINS.BI_compra co WHERE co.id_tiempo = ve.id_tiempo), 0) ganancia_mensual
 	FROM		GAME_OF_JOINS.BI_venta ve
 	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
 	ON			ve.id_tiempo = ti.id_tiempo
@@ -1010,7 +1010,6 @@ GO
 
 
 /*
- * 
  * Los 5 productos con mayor rentabilidad anual, con sus respectivos %
  * Se entiende por rentabilidad a los ingresos generados por el producto
  * (ventas) durante el periodo menos la inversión realizada en el producto
@@ -1019,67 +1018,65 @@ GO
  * Para simplificar, no es necesario tener en cuenta los descuentos aplicados.
  */
 
---SELECT		pr.codigo,
---			ti.anio,
---			ISNULL(SUM(vp.precio * vp.cantidad), 0) INGRESOS,
---			ISNULL((
---				SELECT			SUM(cp.precio_unitario * cp.cantidad)
---				FROM			GAME_OF_JOINS.BI_compra_producto cp
---				WHERE			cp.id_producto = vp.id_producto AND cp.id_tiempo = vp.id_tiempo
---				GROUP BY		cp.id_producto, cp.id_tiempo
---			), 0) AS EGRESOS
---FROM		GAME_OF_JOINS.BI_venta_producto vp
---INNER JOIN	GAME_OF_JOINS.BI_producto pr
---ON			vp.id_producto = pr.id_producto
---INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
---ON			vp.id_tiempo = ti.id_tiempo
---GROUP BY	vp.id_producto, pr.codigo, vp.id_tiempo, ti.anio, ti.mes
+IF Object_id('GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual
 
+GO 
 
---UAKB76XZ4Q43OMUIJ	2022	25020191.2800	26744400.48
---PT4Z0MUEI6POBVSHX	2022	18582853.3400	18582853.34
---IB3G2HMYPORVBWHHM	2022	6133221.5700	6133221.57
---8OMJPIUR7AH1QSXJR	2022	5528927.8400	5147174.72
---MBREASJ1U0R1S5UAJ	2022	8543303.5800	8919798.78
+CREATE VIEW GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual
+AS
 
-
-
-
-
---WITH ranking_productos_reposicion AS (
---	    SELECT
---		p.codigo AS producto_codigo,
---		p.descripcion AS producto_descripcion,
---		tie.anio AS anio,
---		tie.mes AS mes,
---		SUM(cp.cantidad) AS cantidad,
---		ROW_NUMBER()
---	    OVER (
---	        PARTITION BY tie.mes
---	        ORDER BY SUM(cp.cantidad) DESC
---	    ) AS ranking 
---	FROM
---		GAME_OF_JOINS.BI_compra_producto cp
---		INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
---		cp.id_tiempo = tie.id_tiempo
---		INNER JOIN GAME_OF_JOINS.BI_producto p
---ON cp.id_producto = p.id_producto
---	GROUP BY
---		p.codigo,
---		p.descripcion,
---		tie.anio,
---		tie.mes
---	)
---	SELECT
---		anio,
---		mes,
---		producto_codigo,
---		producto_descripcion,
---		cantidad
---	FROM
---		ranking_productos_reposicion
---	WHERE
---		ranking <= 3
+WITH ranking_productos_rentabilidad AS (
+	SELECT		pr.codigo codigo,
+				ti.anio anio,
+				100 *(
+					ISNULL(SUM(vp.precio * vp.cantidad), 0)
+					-
+					ISNULL((
+						SELECT			SUM(cp.precio_unitario * cp.cantidad)
+						FROM			GAME_OF_JOINS.BI_compra_producto cp
+						INNER JOIN		GAME_OF_JOINS.BI_tiempo ti2
+						ON				cp.id_tiempo = ti2.id_tiempo
+						WHERE			cp.id_producto = vp.id_producto AND ti2.anio = ti.anio
+						GROUP BY		cp.id_producto
+					), 0)
+				)
+				/
+				(SUM(vp.precio * vp.cantidad)) rentabilidad,
+				ROW_NUMBER()
+				OVER (
+					PARTITION BY ti.anio
+					ORDER BY	100 * (
+									ISNULL(SUM(vp.precio * vp.cantidad), 0)
+									-
+									ISNULL((
+										SELECT			SUM(cp.precio_unitario * cp.cantidad)
+										FROM			GAME_OF_JOINS.BI_compra_producto cp
+										INNER JOIN		GAME_OF_JOINS.BI_tiempo ti2
+										ON				cp.id_tiempo = ti2.id_tiempo
+										WHERE			cp.id_producto = vp.id_producto AND ti2.anio = ti.anio
+										GROUP BY		cp.id_producto
+									), 0)
+								)
+								/
+								(SUM(vp.precio * vp.cantidad))
+					DESC) AS ranking
+	FROM		GAME_OF_JOINS.BI_venta_producto vp
+	INNER JOIN	GAME_OF_JOINS.BI_producto pr
+	ON			vp.id_producto = pr.id_producto
+	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
+	ON			vp.id_tiempo = ti.id_tiempo
+	GROUP BY	vp.id_producto, pr.codigo, ti.anio
+	)
+	SELECT
+		codigo codigo,
+		anio anio,
+		rentabilidad rentabilidad
+	FROM
+		ranking_productos_rentabilidad
+	WHERE
+		ranking <= 5
+GO
 
 /*
  * Las 5 categorías de productos más vendidos por rango etario de clientes
@@ -1093,17 +1090,17 @@ GO
  * (en caso que aplique)
  */
 
-  IF Object_id('GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago') IS NOT NULL 
+IF Object_id('GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago') IS NOT NULL 
   DROP VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
 
 GO 
 
 CREATE VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
 AS
-	SELECT		ti.anio 'Año',
-				ti.mes 'Mes',
-				mp.descripcion 'Medio de pago',
-				SUM(ve.total) - SUM(ve.mepa_costo) - SUM(ve.mepa_descuento) 'Ingreso'
+	SELECT		ti.anio anio,
+				ti.mes mes,
+				mp.descripcion medio_de_pago,
+				SUM(ve.total) - SUM(ve.mepa_costo) - SUM(ve.mepa_descuento) ingreso_mensual
 	FROM		GAME_OF_JOINS.BI_venta ve
 	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
 	ON			ve.id_tiempo = ti.id_tiempo
@@ -1113,13 +1110,35 @@ AS
 GO
 
 
-
-
 /* 
  * Importe total en descuentos aplicados según su tipo de descuento, por
  * canal de venta, por mes. Se entiende por tipo de descuento como los
  * correspondientes a envío, medio de pago, cupones, etc)
  */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo
+AS
+	SELECT		ti.anio anio,
+				ti.mes mes,
+				ca.descripcion canal,
+				td.descripcion tipo_de_descuento,
+				SUM(vd.importe) importe_mensual
+	FROM		GAME_OF_JOINS.BI_venta ve
+	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
+	ON			ve.id_tiempo = ti.id_tiempo
+	INNER JOIN	GAME_OF_JOINS.BI_canal ca
+	ON			ve.id_canal = ca.id_canal
+	INNER JOIN	GAME_OF_JOINS.BI_venta_descuento vd
+	ON			ve.venta_codigo = vd.venta_codigo
+	INNER JOIN	GAME_OF_JOINS.BI_tipo_descuento td
+	ON			vd.id_tipo_descuento = td.id_tipo_descuento
+	GROUP BY	ve.id_tiempo, ti.anio, ti.mes, ca.id_canal, ca.descripcion, td.id_tipo_descuento, td.descripcion
+GO
 
 /*
  * Porcentaje de envíos realizados a cada Provincia por mes. El porcentaje
@@ -1171,3 +1190,8 @@ GO
 EXEC GAME_OF_JOINS.BI_Drop_All_Procedures
 
 GO
+
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Ganancias_Mensuales ORDER BY anio ASC, mes ASC, canal_de_venta ASC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual ORDER BY anio ASC, rentabilidad DESC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago ORDER BY anio ASC, mes ASC, medio_de_pago ASC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo ORDER BY anio ASC, mes ASC, tipo_de_descuento ASC
