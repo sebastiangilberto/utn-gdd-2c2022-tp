@@ -335,6 +335,98 @@ AS
 
 GO 
 
+-- devuelve el id_proveedor de bi en base al cuit del mismo en el modelo  
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Proveedor') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Proveedor 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Proveedor(@cuit_proveedor_modelo NVARCHAR(50)) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_proveedor AS INT 
+
+		SELECT 
+				@id_proveedor = id_proveedor
+		FROM	GAME_OF_JOINS.BI_proveedor	
+		WHERE
+				cuit = @cuit_proveedor_modelo
+
+      RETURN @id_proveedor 
+  END
+
+GO
+
+-- devuelve el id_producto de bi en base al código de producto del mismo en el modelo  
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Producto') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Producto 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Producto(@codigo_producto_modelo NVARCHAR(50)) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_producto AS INT 
+
+		SELECT 
+				@id_producto = id_producto
+		FROM	GAME_OF_JOINS.BI_producto	
+		WHERE
+				codigo = @codigo_producto_modelo
+
+      RETURN @id_producto 
+  END
+
+GO 
+
+-- devuelve el id_tiempo de bi en base a una fecha del modelo  
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Tiempo') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Tiempo 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Tiempo(@fecha_modelo DATE) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_fecha AS INT 
+
+		SELECT 
+				@id_fecha = id_tiempo
+		FROM	GAME_OF_JOINS.BI_tiempo	
+		WHERE
+				anio = YEAR(@fecha_modelo) AND mes = MONTH(@fecha_modelo)
+
+      RETURN @id_fecha 
+  END
+
+GO 
+
+-- devuelve el id_categoria de bi en base a una categoria del modelo  
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Categoria') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Categoria 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Categoria(@categoria_modelo NVARCHAR(255)) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_categoria AS INT 
+
+		SELECT 
+				@id_categoria = id_categoria
+		FROM	GAME_OF_JOINS.BI_producto_categoria
+		WHERE
+				descripcion = @categoria_modelo
+
+      RETURN @id_categoria 
+  END
+
+GO 
+
 -- devuelve el id_provincia de bi en base al cliente del modelo  
 IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Provincia') IS NOT NULL 
   DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Provincia 
@@ -699,6 +791,95 @@ AS
 	FROM
 		GAME_OF_JOINS.provincia
 
+GO
+
+--producto 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Producto') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto 
+
+GO 
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_producto
+                (codigo, descripcion) 
+	SELECT
+		DISTINCT	prod_codigo,
+					prod_descripcion
+	FROM
+		GAME_OF_JOINS.producto
+
+GO
+
+--compra_producto 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Compra_Producto') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Compra_Producto 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Compra_Producto
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_compra_producto
+                (id_producto, precio_unitario, id_proveedor, cantidad, id_tiempo) 
+	SELECT
+		GAME_OF_JOINS.BI_Obtener_Id_Producto(cp.cpro_producto_codigo),
+		cp.cpro_precio,
+		GAME_OF_JOINS.BI_Obtener_Id_Proveedor(co.comp_proveedor_cuit),
+		cp.cpro_cantidad,
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(co.comp_fecha)		
+	FROM
+		GAME_OF_JOINS.compra_producto cp
+	INNER JOIN
+		GAME_OF_JOINS.compra co
+	ON	cp.cpro_compra_numero = co.comp_numero
+GO
+
+--compra
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Compra') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Compra
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Compra
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_compra
+                (total, id_proveedor, id_tiempo) 
+	SELECT
+		comp_total,
+		GAME_OF_JOINS.BI_Obtener_Id_Proveedor(comp_proveedor_cuit),
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(comp_fecha)		
+	FROM
+		GAME_OF_JOINS.compra
+GO
+
+--venta producto
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta_Producto') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Producto
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Producto
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_venta_producto
+                (id_producto, id_producto_categoria, precio, cantidad, id_tiempo, id_cliente) 
+	SELECT
+		GAME_OF_JOINS.BI_Obtener_Id_Producto(vp.vpro_producto_codigo),
+		GAME_OF_JOINS.BI_Obtener_Id_Categoria(pc.pcat_categoria),
+		vp.vpro_precio,
+		vp.vpro_cantidad,
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(ve.vent_fecha),
+		GAME_OF_JOINS.BI_Obtener_Id_Cliente(ve.vent_cliente)
+	FROM
+		GAME_OF_JOINS.venta_producto vp
+	INNER JOIN
+		GAME_OF_JOINS.venta ve
+	ON	vp.vpro_venta_codigo = ve.vent_codigo
+	INNER JOIN
+		GAME_OF_JOINS.producto pr
+	ON	vp.vpro_producto_codigo = pr.prod_codigo
+	INNER JOIN
+		GAME_OF_JOINS.producto_categoria pc
+	ON
+		pr.prod_categoria = pc.pcat_id
 GO 
 
 ------------------------------------------------
@@ -769,7 +950,7 @@ GO
 EXEC GAME_OF_JOINS.BI_Migrar_Tiempo
 EXEC GAME_OF_JOINS.BI_Migrar_Cliente
 EXEC GAME_OF_JOINS.BI_Migrar_Canal
---EXEC GAME_OF_JOINS.BI_Migrar_Producto
+EXEC GAME_OF_JOINS.BI_Migrar_Producto
 EXEC GAME_OF_JOINS.BI_Migrar_Producto_Categoria
 EXEC GAME_OF_JOINS.BI_Migrar_Provincia
 EXEC GAME_OF_JOINS.BI_Migrar_Proveedor
@@ -777,9 +958,10 @@ EXEC GAME_OF_JOINS.BI_Migrar_Medio_Pago
 EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Envio
 EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Descuento
 EXEC GAME_OF_JOINS.BI_Migrar_Venta
---EXEC GAME_OF_JOINS.BI_Migrar_Compra
---EXEC GAME_OF_JOINS.BI_Migrar_Venta_Producto
---EXEC GAME_OF_JOINS.BI_Migrar_Compra_Producto
+EXEC GAME_OF_JOINS.BI_Migrar_Compra
+--EXEC GAME_OF_JOINS.BI_Migrar_Venta_Descuento
+EXEC GAME_OF_JOINS.BI_Migrar_Venta_Producto
+EXEC GAME_OF_JOINS.BI_Migrar_Compra_Producto
 
 GO
 
