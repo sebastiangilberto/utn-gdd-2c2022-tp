@@ -563,6 +563,30 @@ AS
 
 GO 
 
+-- devuelve el id_tipo_descuento de bi en base al id de tipo descuento del modelo 
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento 
+
+GO 
+
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento(@tipo_descuento_modelo NVARCHAR(255)) 
+RETURNS INT 
+AS 
+  BEGIN 
+      DECLARE @id_tipo_descuento AS INT 
+
+		SELECT
+			@id_tipo_descuento = id_tipo_descuento
+		FROM
+			GAME_OF_JOINS.BI_tipo_descuento
+		WHERE
+			descripcion = @tipo_descuento_modelo
+
+      RETURN @id_tipo_descuento
+  END; 
+
+GO 
+
 ------------------------------------------------
 -------- Procedures para migracion -------------
 ------------------------------------------------
@@ -723,7 +747,7 @@ AS
 GO 
 
 --venta_descuento
-/*
+
 IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta_Descuento') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Descuento 
 
@@ -731,17 +755,20 @@ GO
 
 CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Descuento 
 AS 
-    INSERT INTO GAME_OF_JOINS.BI_venta_descuento
-                (id_venta, id_tipo_descuento, importe) 
-	SELECT
-		GAME_OF_JOINS.BI_Obtener_Id_Venta(vede_venta_codigo),
-		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento(vede_descuento),
-		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento(vede_descuento),
-	FROM
-		GAME_OF_JOINS.venta_descuento
 
+	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_venta_descuento
+	(venta_codigo, id_tipo_descuento, importe)
+
+	SELECT
+		vd.vede_venta_codigo,
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento(d.descu_tipo) AS id_tipo_descuento,
+		vd.vede_importe
+	FROM
+		GAME_OF_JOINS.venta_descuento vd
+	INNER JOIN GAME_OF_JOINS.descuento d ON
+		vd.vede_descuento = d.descu_id
 GO
-*/
+
 --proveedor 
 IF Object_id('GAME_OF_JOINS.BI_Migrar_Proveedor') IS NOT NULL 
   DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Proveedor 
@@ -959,7 +986,7 @@ EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Envio
 EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Descuento
 EXEC GAME_OF_JOINS.BI_Migrar_Venta
 EXEC GAME_OF_JOINS.BI_Migrar_Compra
---EXEC GAME_OF_JOINS.BI_Migrar_Venta_Descuento
+EXEC GAME_OF_JOINS.BI_Migrar_Venta_Descuento
 EXEC GAME_OF_JOINS.BI_Migrar_Venta_Producto
 EXEC GAME_OF_JOINS.BI_Migrar_Compra_Producto
 
