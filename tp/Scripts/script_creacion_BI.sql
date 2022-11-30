@@ -583,6 +583,8 @@ AS
 			ve.veen_medio_habilitado = hab.menh_id
 		INNER JOIN GAME_OF_JOINS.medio_envio me ON
 			hab.menh_medio_envio = me.menv_id
+		WHERE
+			ve.veen_venta_codigo = @codigo_venta_modelo
       
 		SELECT
 			@id_tipo_envio = id_tipo_envio
@@ -615,6 +617,8 @@ AS
 			GAME_OF_JOINS.venta_medio_pago vmp
 		INNER JOIN GAME_OF_JOINS.medio_pago mp ON
 			vmp.vmep_medio_pago = mp.mepa_id
+		WHERE
+			vmp.id = @venta_medio_pago_modelo
       
 		SELECT
 			@id_medio_pago = id_medio_pago
