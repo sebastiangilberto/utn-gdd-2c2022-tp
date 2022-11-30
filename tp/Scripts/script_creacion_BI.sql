@@ -1037,7 +1037,17 @@ AS
 		tie.anio AS anio,
 		tie.mes AS mes,
 		p.descripcion AS provincia,
-		100 * COUNT(*) / (
+		COUNT(*) AS cantidad_enviada,
+		(SELECT
+			COUNT(*)
+		FROM
+			GAME_OF_JOINS.BI_venta v1
+		INNER JOIN GAME_OF_JOINS.BI_tiempo tie1 ON
+			v1.id_tiempo = tie1.id_tiempo
+		WHERE
+			tie1.anio = tie.anio
+			AND tie1.mes = tie.mes) AS total_enviado,
+		ROUND(100 * 1.0 * COUNT(*) / (
 		SELECT
 			COUNT(*)
 		FROM
@@ -1046,7 +1056,7 @@ AS
 			v1.id_tiempo = tie1.id_tiempo
 		WHERE
 			tie1.anio = tie.anio
-			AND tie1.mes = tie.mes)  AS porcentaje_envios
+			AND tie1.mes = tie.mes),2) AS porcentaje_envios
 	FROM
 		GAME_OF_JOINS.BI_venta v
 	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
