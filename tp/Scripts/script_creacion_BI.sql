@@ -1165,7 +1165,7 @@ AS
 		p.cuit AS proveedor,
 		MAX(precio_unitario) AS maximo,
 		MIN(precio_unitario) AS minimo,
-		(MAX(precio_unitario) - MIN(precio_unitario)) / MIN(precio_unitario) AS porcentaje_aumento
+		(MAX(precio_unitario) - MIN(precio_unitario)) / MIN(precio_unitario) * 100 AS porcentaje_aumento
 	FROM
 		GAME_OF_JOINS.BI_compra_producto cp
 	INNER JOIN GAME_OF_JOINS.BI_Proveedor p ON
@@ -1179,7 +1179,7 @@ AS
 	SELECT
 		anio,
 		proveedor,
-		AVG(porcentaje_aumento) AS aumento_promedio
+		ROUND(AVG(porcentaje_aumento), 2) AS aumento_promedio
 	FROM
 		aumentos_proveedores
 	GROUP BY
