@@ -797,7 +797,7 @@ AS
 			v1.vent_codigo = v.vent_codigo
 			AND d.descu_tipo = 'Medio Pago'),
 		0) AS mepa_descuento,
-		1 AS id_tiempo,
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(v.vent_fecha) AS id_tiempo,
 		GAME_OF_JOINS.BI_Obtener_Id_Cliente(v.vent_cliente) AS id_cliente,
 		GAME_OF_JOINS.BI_Obtener_Id_Provincia(v.vent_cliente) AS id_provincia,
 		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo) AS id_canal,
