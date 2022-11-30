@@ -618,7 +618,7 @@ AS
 		INNER JOIN GAME_OF_JOINS.medio_pago mp ON
 			vmp.vmep_medio_pago = mp.mepa_id
 		WHERE
-			vmp.id = @venta_medio_pago_modelo
+			vmp.vmep_id = @venta_medio_pago_modelo
       
 		SELECT
 			@id_medio_pago = id_medio_pago
@@ -1029,6 +1029,33 @@ GO
  * Valor promedio de envío por Provincia por Medio De Envío anual.
  */
 
+IF Object_id('GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+AS 
+	SELECT
+		tie.anio AS anio,
+		p.descripcion AS provincia,
+		te.descripcion AS medio_envio,
+		AVG(v.valor_envio) AS valor_promedio_envio
+	FROM
+		GAME_OF_JOINS.BI_venta v
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		v.id_tiempo = tie.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_tipo_envio te ON
+		v.id_tipo_envio = te.id_tipo_envio
+	INNER JOIN GAME_OF_JOINS.BI_provincia p ON
+		v.id_provincia = p.id_provincia
+	GROUP BY
+		tie.anio,
+		p.descripcion,
+		te.descripcion
+GO
+
 /*
  * Aumento promedio de precios de cada proveedor anual. Para calcular este
  * indicador se debe tomar como referencia el máximo precio por año menos
@@ -1158,3 +1185,4 @@ GO
 
 SELECT * FROM GAME_OF_JOINS.BI_VW_productos_mayor_reposicion ORDER BY mes, anio, cantidad DESC
 SELECT * FROM GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor ORDER BY anio ASC, proveedor ASC
+SELECT * FROM GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia ORDER BY anio, provincia, medio_envio 
