@@ -1006,6 +1006,50 @@ GO
  * por mes.
  */
 
+IF Object_id('GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
+AS 
+	WITH ranking_categorias_por_edad AS (
+	SELECT
+		tie.anio AS anio,
+		tie.mes AS mes,
+		c.rango_etario AS rango_etario,
+		pc.descripcion AS categoria,
+		SUM(vp.cantidad) AS cantidad_vendida,
+		ROW_NUMBER() OVER (PARTITION BY tie.mes, c.rango_etario
+	ORDER BY
+		SUM(vp.cantidad) DESC) AS ranking
+	FROM
+		GAME_OF_JOINS.BI_venta_producto vp
+	INNER JOIN GAME_OF_JOINS.BI_producto_categoria pc ON
+		vp.id_categoria = pc.id_categoria
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		vp.id_tiempo = tie.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_cliente c ON
+		vp.id_cliente = c.id_cliente
+	GROUP BY
+		tie.anio,
+		tie.mes,
+		c.rango_etario,
+		pc.descripcion )
+	SELECT
+		anio,
+		mes,
+		rango_etario,
+		categoria,
+		cantidad_vendida
+	FROM
+		ranking_categorias_por_edad
+	WHERE
+		ranking <= 5
+
+GO
+
 /*
  * Total de Ingresos por cada medio de pago por mes, descontando los costos
  * por medio de pago (en caso que aplique) y descuentos por medio de pago
@@ -1231,3 +1275,4 @@ SELECT * FROM GAME_OF_JOINS.BI_VW_productos_mayor_reposicion ORDER BY mes, anio,
 SELECT * FROM GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor ORDER BY anio ASC, proveedor ASC
 SELECT * FROM GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia ORDER BY anio, provincia, medio_envio
 SELECT * FROM GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual ORDER BY anio, mes, provincia
+SELECT * FROM GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario ORDER BY anio, mes, rango_etario, categoria, cantidad_vendida DESC
