@@ -25,7 +25,7 @@ IF Object_id('GAME_OF_JOINS.BI_Erase_All_Foreign_Keys') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.BI_Erase_All_Foreign_Keys
+CREATE PROCEDURE GAME_OF_JOINS.BI_Erase_All_Foreign_Keys
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR 
@@ -53,7 +53,7 @@ IF Object_id('GAME_OF_JOINS.BI_Drop_All_Tables') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.BI_Drop_All_Tables
+CREATE PROCEDURE GAME_OF_JOINS.BI_Drop_All_Tables
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR  
@@ -79,7 +79,7 @@ IF Object_id('GAME_OF_JOINS.BI_Drop_All_Procedures') IS NOT NULL
 
 GO 
 
-CREATE OR ALTER PROCEDURE GAME_OF_JOINS.BI_Drop_All_Procedures
+CREATE PROCEDURE GAME_OF_JOINS.BI_Drop_All_Procedures
 AS 
     DECLARE @query nvarchar(255) 
     DECLARE query_cursor CURSOR FOR  

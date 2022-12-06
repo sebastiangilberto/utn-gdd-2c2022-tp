@@ -1,0 +1,50 @@
+Mens. 156, Nivel 15, Estado 1, Línea 2
+Sintaxis incorrecta cerca de la palabra clave 'OR'.
+Mens. 111, Nivel 15, Estado 1, Línea 4
+'CREATE/ALTER PROCEDURE' debe ser la primera instrucción en un lote de consultas.
+Mens. 156, Nivel 15, Estado 1, Línea 2
+Sintaxis incorrecta cerca de la palabra clave 'OR'.
+Mens. 111, Nivel 15, Estado 1, Línea 4
+'CREATE/ALTER PROCEDURE' debe ser la primera instrucción en un lote de consultas.
+Mens. 156, Nivel 15, Estado 1, Línea 2
+Sintaxis incorrecta cerca de la palabra clave 'OR'.
+Mens. 111, Nivel 15, Estado 1, Línea 4
+'CREATE/ALTER PROCEDURE' debe ser la primera instrucción en un lote de consultas.
+Mens. 2812, Nivel 16, Estado 62, Línea 6
+No se encontró el procedimiento almacenado 'GAME_OF_JOINS.BI_Erase_All_Foreign_Keys'.
+Mens. 2812, Nivel 16, Estado 62, Línea 7
+No se encontró el procedimiento almacenado 'GAME_OF_JOINS.BI_Drop_All_Tables'.
+Mens. 2812, Nivel 16, Estado 62, Línea 8
+No se encontró el procedimiento almacenado 'GAME_OF_JOINS.BI_Drop_All_Procedures'.
+
+(12 filas afectadas)
+
+(3 filas afectadas)
+
+(4 filas afectadas)
+
+(1310 filas afectadas)
+
+(3 filas afectadas)
+
+(3 filas afectadas)
+
+(21 filas afectadas)
+
+(4 filas afectadas)
+
+(5 filas afectadas)
+
+(3 filas afectadas)
+
+(7077 filas afectadas)
+
+(171 filas afectadas)
+
+(8708 filas afectadas)
+
+(106405 filas afectadas)
+
+(111110 filas afectadas)
+Mens. 2812, Nivel 16, Estado 62, Línea 6
+No se encontró el procedimiento almacenado 'GAME_OF_JOINS.BI_Drop_All_Procedures'.

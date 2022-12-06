@@ -8,7 +8,7 @@ IF Object_id('GAME_OF_JOINS.table_row_count') IS NOT NULL
   DROP VIEW GAME_OF_JOINS.table_row_count
 GO 
 
-CREATE OR ALTER VIEW GAME_OF_JOINS.table_row_count
+CREATE VIEW GAME_OF_JOINS.table_row_count
 AS
 	SELECT
 		o.NAME as table_name,
