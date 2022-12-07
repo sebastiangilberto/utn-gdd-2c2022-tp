@@ -110,7 +110,7 @@ EXEC GAME_OF_JOINS.BI_Drop_All_Procedures
 GO
 
 ------------------------------------------------
------------- Definicion de datos ---------------
+----------- Tablas de dimensiones --------------
 ------------------------------------------------
 
 /*
@@ -135,7 +135,14 @@ GO
 CREATE TABLE GAME_OF_JOINS.BI_canal
   (
 	 id_canal INT PRIMARY KEY IDENTITY(1, 1), 
-     descripcion NVARCHAR(255),
+     descripcion NVARCHAR(255) NOT NULL,
+  )
+
+--categoria_producto  
+CREATE TABLE GAME_OF_JOINS.BI_categoria_producto
+  (
+	 id_categoria INT PRIMARY KEY IDENTITY(1, 1), 
+     descripcion NVARCHAR(255) NOT NULL,
   )
 
 --cliente  
@@ -145,46 +152,12 @@ CREATE TABLE GAME_OF_JOINS.BI_cliente
      rango_etario NVARCHAR(255) NOT NULL,
   ) 
 
---compra
-CREATE TABLE GAME_OF_JOINS.BI_compra
-  (
-	id_compra INT PRIMARY KEY IDENTITY(1, 1),
-	total DECIMAL(18,2) NOT NULL,
-	id_proveedor INT NOT NULL, --fk
-	id_tiempo INT NOT NULL, --fk
-  ) 
-
---compra_producto
-CREATE TABLE GAME_OF_JOINS.BI_compra_producto
-  (
-	id_compra_producto INT PRIMARY KEY IDENTITY(1, 1),
-	precio_unitario DECIMAL(18,2) NOT NULL,
-	cantidad DECIMAL(18,0) NOT NULL,
-	id_producto INT NOT NULL, --fk
-	id_proveedor INT NOT NULL, --fk
-	id_tiempo INT NOT NULL, --fk
-  ) 
-
---medio_pago
-CREATE TABLE GAME_OF_JOINS.BI_medio_pago
-  (
-	 id_medio_pago INT PRIMARY KEY IDENTITY(1, 1), 
-     descripcion NVARCHAR(255) NOT NULL,
-  )
-
 --producto
 CREATE TABLE GAME_OF_JOINS.BI_producto
   (
 	 id_producto INT PRIMARY KEY IDENTITY(1, 1),
 	 codigo NVARCHAR(50) NOT NULL,
      descripcion NVARCHAR(50) NOT NULL,
-  )
-
---producto_categoria  
-CREATE TABLE GAME_OF_JOINS.BI_producto_categoria
-  (
-	 id_categoria INT PRIMARY KEY IDENTITY(1, 1), 
-     descripcion NVARCHAR(255),
   )
 
 --proveedor
@@ -198,7 +171,7 @@ CREATE TABLE GAME_OF_JOINS.BI_proveedor
 CREATE TABLE GAME_OF_JOINS.BI_provincia
   (
 	 id_provincia INT PRIMARY KEY IDENTITY(1, 1), 
-     descripcion NVARCHAR(255),
+     descripcion NVARCHAR(255) NOT NULL,
   )
 
 --tiempo
@@ -223,44 +196,71 @@ CREATE TABLE GAME_OF_JOINS.BI_tipo_envio
      descripcion NVARCHAR(255) NOT NULL,
   )
 
--- venta
-CREATE TABLE GAME_OF_JOINS.BI_venta
+--tipo_medio_pago
+CREATE TABLE GAME_OF_JOINS.BI_tipo_medio_pago
   (
-	id_venta INT PRIMARY KEY IDENTITY(1, 1),
-	venta_codigo DECIMAL(19,0) NOT NULL,
-	total DECIMAL(18,2) NOT NULL,
-	valor_envio DECIMAL(18,2),
-	mepa_costo DECIMAL(18,2) NOT NULL,
-	mepa_descuento DECIMAL(18,2),
+	 id_tipo_medio_pago INT PRIMARY KEY IDENTITY(1, 1), 
+     descripcion NVARCHAR(255) NOT NULL,
+  )
+
+------------------------------------------------
+------------- Tablas de Hechos -----------------
+------------------------------------------------
+
+--hechos_compra
+CREATE TABLE GAME_OF_JOINS.BI_hechos_compra
+  (
+	id_hechos_compra INT PRIMARY KEY IDENTITY(1, 1),
+	id_producto INT NOT NULL, --fk
+	id_proveedor INT NOT NULL, --fk
 	id_tiempo INT NOT NULL, --fk
-	id_cliente INT NOT NULL, --fk
-	id_provincia INT NOT NULL, --fk
-	id_canal INT NOT NULL, --fk
-	id_tipo_envio INT NOT NULL, --fk
-	id_medio_pago INT NOT NULL, --fk
+	cantidad DECIMAL(18,0) NOT NULL,
+	precio_unitario DECIMAL(18,2) NOT NULL,
   ) 
 
---venta_descuento
-CREATE TABLE GAME_OF_JOINS.BI_venta_descuento
+--hechos_descuento
+CREATE TABLE GAME_OF_JOINS.BI_hechos_medio_pago
   (
-	id_venta_descuento INT PRIMARY KEY IDENTITY(1, 1),
-	venta_codigo DECIMAL(19,0) NOT NULL,
+	id_hechos_descuento INT PRIMARY KEY IDENTITY(1, 1),
+	id_canal INT NOT NULL, --fk
+	id_tiempo INT NOT NULL, --fk
 	id_tipo_descuento INT NOT NULL, --fk
-	importe DECIMAL(18,2) NOT NULL, --fk
-  )  
+	valor_total DECIMAL(18,2) NOT NULL,
+  ) 
 
---venta_producto
-CREATE TABLE GAME_OF_JOINS.BI_venta_producto
+--hechos_envio
+CREATE TABLE GAME_OF_JOINS.BI_hechos_envio
   (
-	id_venta_producto INT PRIMARY KEY IDENTITY(1, 1),
-	id_producto INT NOT NULL,
-	id_categoria INT NOT NULL, --fk
+	id_hechos_envio INT PRIMARY KEY IDENTITY(1, 1),
+	id_provincia INT NOT NULL, --fk
+	id_tiempo INT NOT NULL, --fk
+	id_tipo_envio INT NOT NULL, --fk
+	cantidad_envios INT NOT NULL,
+	costo_envio DECIMAL(18,2) NOT NULL,
+  ) 
+
+--hechos_medio_pago
+CREATE TABLE GAME_OF_JOINS.BI_hechos_medio_pago
+  (
+	id_hechos_medio_pago INT PRIMARY KEY IDENTITY(1, 1),
+	id_tipo_medio_pago INT NOT NULL, --fk
+	id_canal INT NOT NULL, --fk
+	id_tiempo INT NOT NULL, --fk
+	costo_envio DECIMAL(18,2) NOT NULL,
+  ) 
+
+--hechos_venta
+CREATE TABLE GAME_OF_JOINS.BI_hechos_venta
+  (
+	id_hechos_venta INT PRIMARY KEY IDENTITY(1, 1),
 	id_tiempo INT NOT NULL, --fk
 	id_cliente INT NOT NULL, --fk
-	precio DECIMAL(18,2) NOT NULL, --fk
-	cantidad DECIMAL(18,2) NOT NULL, --fk
-  )  
-
+	id_canal INT NOT NULL, --fk
+	id_categoria INT NOT NULL, --fk
+	id_producto INT NOT NULL, --fk
+	cantidad DECIMAL(18,0) NOT NULL,
+	precio_unitario DECIMAL(18,2) NOT NULL,
+  )
   
 ------------------------------------------------
 ------------- Definicion de FKs ----------------
@@ -269,68 +269,72 @@ CREATE TABLE GAME_OF_JOINS.BI_venta_producto
 -- Regla para nombrar FKs: FK_BI_tabla_origen_nombre_campo 
 
   
---compra
+--hechos_compra
 ALTER TABLE GAME_OF_JOINS.BI_compra 
-  ADD CONSTRAINT fk_BI_compra_id_proveedor FOREIGN KEY (id_proveedor) REFERENCES GAME_OF_JOINS.BI_proveedor(id_proveedor) 
+  ADD CONSTRAINT fk_BI_hechos_compra_id_producto FOREIGN KEY (id_producto) REFERENCES GAME_OF_JOINS.BI_producto(id_producto) 
 
 ALTER TABLE GAME_OF_JOINS.BI_compra 
-  ADD CONSTRAINT fk_BI_compra_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
+  ADD CONSTRAINT fk_BI_hechos_compra_id_proveedor FOREIGN KEY (id_proveedor) REFERENCES GAME_OF_JOINS.BI_proveedor(id_proveedor) 
+
+ALTER TABLE GAME_OF_JOINS.BI_compra 
+  ADD CONSTRAINT fk_BI_hechos_compra_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
 
 GO
   
---compra_producto
-ALTER TABLE GAME_OF_JOINS.BI_compra_producto
-  ADD CONSTRAINT fk_BI_compra_producto_id_producto FOREIGN KEY (id_producto) REFERENCES GAME_OF_JOINS.BI_producto(id_producto) 
+--hechos_descuento
+ALTER TABLE GAME_OF_JOINS.BI_hechos_descuento
+  ADD CONSTRAINT fk_BI_hechos_descuento_id_canal FOREIGN KEY (id_canal) REFERENCES GAME_OF_JOINS.BI_canal(id_canal) 
 
-ALTER TABLE GAME_OF_JOINS.BI_compra_producto 
-  ADD CONSTRAINT fk_BI_compra_producto_id_proveedor FOREIGN KEY (id_proveedor) REFERENCES GAME_OF_JOINS.BI_proveedor(id_proveedor) 
+ALTER TABLE GAME_OF_JOINS.BI_hechos_descuento
+  ADD CONSTRAINT fk_BI_hechos_descuento_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
 
-ALTER TABLE GAME_OF_JOINS.BI_compra_producto 
-  ADD CONSTRAINT fk_BI_compra_producto_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
-
-GO
-
---venta
-ALTER TABLE GAME_OF_JOINS.BI_venta
-  ADD CONSTRAINT fk_BI_venta_id_provincia FOREIGN KEY (id_provincia) REFERENCES GAME_OF_JOINS.BI_provincia(id_provincia) 
-
-ALTER TABLE GAME_OF_JOINS.BI_venta
-  ADD CONSTRAINT fk_BI_venta_id_cliente FOREIGN KEY (id_cliente) REFERENCES GAME_OF_JOINS.BI_cliente(id_cliente) 
-
-ALTER TABLE GAME_OF_JOINS.BI_venta
-  ADD CONSTRAINT fk_BI_venta_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
-  
-ALTER TABLE GAME_OF_JOINS.BI_venta
-  ADD CONSTRAINT fk_BI_venta_id_canal FOREIGN KEY (id_canal) REFERENCES GAME_OF_JOINS.BI_canal(id_canal) 
-  
-ALTER TABLE GAME_OF_JOINS.BI_venta
-  ADD CONSTRAINT fk_BI_venta_id_tipo_envio FOREIGN KEY (id_tipo_envio) REFERENCES GAME_OF_JOINS.BI_tipo_envio(id_tipo_envio) 
-
-ALTER TABLE GAME_OF_JOINS.BI_venta
-  ADD CONSTRAINT fk_BI_venta_id_medio_pago FOREIGN KEY (id_medio_pago) REFERENCES GAME_OF_JOINS.BI_medio_pago(id_medio_pago) 
+ALTER TABLE GAME_OF_JOINS.BI_hechos_descuento
+  ADD CONSTRAINT fk_BI_hechos_descuento_id_tipo_descuento FOREIGN KEY (id_tipo_descuento) REFERENCES GAME_OF_JOINS.BI_tipo_descuento(id_tipo_descuento) 
 
 GO
 
---venta_descuento
-ALTER TABLE GAME_OF_JOINS.BI_venta_descuento
-  ADD CONSTRAINT fk_BI_venta_descuento_id_tipo_descuento FOREIGN KEY (id_tipo_descuento) REFERENCES GAME_OF_JOINS.BI_tipo_descuento(id_tipo_descuento) 
+--hechos_envio
+ALTER TABLE GAME_OF_JOINS.BI_hechos_envio
+  ADD CONSTRAINT fk_BI_hechos_envio_id_provincia FOREIGN KEY (id_provincia) REFERENCES GAME_OF_JOINS.BI_provincia(id_provincia) 
+
+ALTER TABLE GAME_OF_JOINS.BI_hechos_envio
+  ADD CONSTRAINT fk_BI_hechos_envio_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
+
+ALTER TABLE GAME_OF_JOINS.BI_hechos_envio
+  ADD CONSTRAINT fk_BI_hechos_envio_id_tipo_envio FOREIGN KEY (id_tipo_envio) REFERENCES GAME_OF_JOINS.BI_tipo_envio(id_tipo_envio) 
 
 GO
 
---venta_producto
-ALTER TABLE GAME_OF_JOINS.BI_venta_producto
-  ADD CONSTRAINT fk_BI_venta_producto_id_producto FOREIGN KEY (id_producto) REFERENCES GAME_OF_JOINS.BI_producto(id_producto) 
+--hechos_medio_pago
+ALTER TABLE GAME_OF_JOINS.BI_hechos_medio_pago
+  ADD CONSTRAINT fk_BI_hechos_medio_pago_id_tipo_medio_pago FOREIGN KEY (id_tipo_medio_pago) REFERENCES GAME_OF_JOINS.BI_tipo_medio_pago(id_tipo_medio_pago) 
 
-ALTER TABLE GAME_OF_JOINS.BI_venta_producto
-  ADD CONSTRAINT fk_BI_venta_producto_id_categoria FOREIGN KEY (id_categoria) REFERENCES GAME_OF_JOINS.BI_producto_categoria(id_categoria) 
-  
-ALTER TABLE GAME_OF_JOINS.BI_venta_producto
-  ADD CONSTRAINT fk_BI_venta_producto_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
-  
-ALTER TABLE GAME_OF_JOINS.BI_venta_producto
-  ADD CONSTRAINT fk_BI_venta_producto_id_cliente FOREIGN KEY (id_cliente) REFERENCES GAME_OF_JOINS.BI_cliente(id_cliente) 
+ALTER TABLE GAME_OF_JOINS.BI_hechos_medio_pago
+  ADD CONSTRAINT fk_BI_hechos_medio_pago_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
+
+ALTER TABLE GAME_OF_JOINS.BI_hechos_medio_pago
+  ADD CONSTRAINT fk_BI_hechos_medio_pago_id_canal FOREIGN KEY (id_canal) REFERENCES GAME_OF_JOINS.BI_canal(id_canal) 
 
 GO
+
+--hechos_venta
+ALTER TABLE GAME_OF_JOINS.BI_hechos_venta
+  ADD CONSTRAINT fk_BI_hechos_venta_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
+
+ALTER TABLE GAME_OF_JOINS.BI_hechos_venta
+  ADD CONSTRAINT fk_BI_hechos_venta_id_cliente FOREIGN KEY (id_cliente) REFERENCES GAME_OF_JOINS.BI_cliente(id_cliente) 
+
+ALTER TABLE GAME_OF_JOINS.BI_hechos_venta
+  ADD CONSTRAINT fk_BI_hechos_venta_id_canal FOREIGN KEY (id_canal) REFERENCES GAME_OF_JOINS.BI_canal(id_canal)
+
+ALTER TABLE GAME_OF_JOINS.BI_hechos_venta
+  ADD CONSTRAINT fk_BI_hechos_venta_id_categoria FOREIGN KEY (id_categoria) REFERENCES GAME_OF_JOINS.BI_categoria_producto(id_categoria) 
+
+ALTER TABLE GAME_OF_JOINS.BI_hechos_venta
+  ADD CONSTRAINT fk_BI_hechos_venta_id_producto FOREIGN KEY (id_producto) REFERENCES GAME_OF_JOINS.BI_producto(id_producto) 
+
+GO
+
 ------------------------------------------------
 ----------- Funciones auxiliares ---------------
 ------------------------------------------------
