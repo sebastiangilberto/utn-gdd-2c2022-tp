@@ -219,7 +219,7 @@ CREATE TABLE GAME_OF_JOINS.BI_hechos_compra
   ) 
 
 --hechos_descuento
-CREATE TABLE GAME_OF_JOINS.BI_hechos_medio_pago
+CREATE TABLE GAME_OF_JOINS.BI_hechos_descuento
   (
 	id_hechos_descuento INT PRIMARY KEY IDENTITY(1, 1),
 	id_canal INT NOT NULL, --fk
@@ -270,13 +270,13 @@ CREATE TABLE GAME_OF_JOINS.BI_hechos_venta
 
   
 --hechos_compra
-ALTER TABLE GAME_OF_JOINS.BI_compra 
+ALTER TABLE GAME_OF_JOINS.BI_hechos_compra 
   ADD CONSTRAINT fk_BI_hechos_compra_id_producto FOREIGN KEY (id_producto) REFERENCES GAME_OF_JOINS.BI_producto(id_producto) 
 
-ALTER TABLE GAME_OF_JOINS.BI_compra 
+ALTER TABLE GAME_OF_JOINS.BI_hechos_compra 
   ADD CONSTRAINT fk_BI_hechos_compra_id_proveedor FOREIGN KEY (id_proveedor) REFERENCES GAME_OF_JOINS.BI_proveedor(id_proveedor) 
 
-ALTER TABLE GAME_OF_JOINS.BI_compra 
+ALTER TABLE GAME_OF_JOINS.BI_hechos_compra 
   ADD CONSTRAINT fk_BI_hechos_compra_id_tiempo FOREIGN KEY (id_tiempo) REFERENCES GAME_OF_JOINS.BI_tiempo(id_tiempo) 
 
 GO
@@ -485,7 +485,7 @@ AS
 
 		SELECT 
 				@id_categoria = id_categoria
-		FROM	GAME_OF_JOINS.BI_producto_categoria
+		FROM	GAME_OF_JOINS.BI_categoria_producto
 		WHERE
 				descripcion = @categoria_modelo
 
@@ -660,9 +660,114 @@ AS
 
 GO 
 
+USE GD2C2022
+
+
 ------------------------------------------------
--------- Procedures para migracion -------------
+--------- Migración de dimensiones -------------
 ------------------------------------------------
+
+--canal 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Canal') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Canal 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Canal 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_canal 
+                (descripcion) 
+	SELECT
+		DISTINCT cana_canal
+	FROM
+		GAME_OF_JOINS.canal
+
+GO 
+
+--categoria_producto 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Categoria_Producto') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Categoria_Producto 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Categoria_Producto
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_categoria_producto
+                (descripcion) 
+	SELECT
+		DISTINCT pcat_categoria
+	FROM
+		GAME_OF_JOINS.producto_categoria
+
+GO 
+
+--cliente 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Cliente') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Cliente 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Cliente 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_cliente 
+                (rango_etario) 
+	SELECT
+		DISTINCT GAME_OF_JOINS.BI_Obtener_Rango_Etario(clie_fecha_nac)
+	FROM
+		GAME_OF_JOINS.cliente
+
+GO 
+
+--producto 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Producto') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto 
+
+GO 
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_producto
+                (codigo, descripcion) 
+	SELECT
+		DISTINCT	prod_codigo,
+					prod_descripcion
+	FROM
+		GAME_OF_JOINS.producto
+
+GO
+
+--proveedor 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Proveedor') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Proveedor 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Proveedor 
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_proveedor 
+                (cuit) 
+	SELECT
+		DISTINCT prove_cuit
+	FROM
+		GAME_OF_JOINS.proveedor
+
+GO 
+
+--provincia 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Provincia') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Provincia 
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Provincia
+AS 
+    INSERT INTO GAME_OF_JOINS.BI_provincia
+                (descripcion) 
+	SELECT
+		DISTINCT prov_provincia
+	FROM
+		GAME_OF_JOINS.provincia
+
+GO
 
 --tiempo   
 IF Object_id('GAME_OF_JOINS.BI_Migrar_Tiempo') IS NOT NULL 
@@ -689,57 +794,22 @@ AS
 
 GO 
 
-
---cliente 
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Cliente') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Cliente 
+--tipo_descuento
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Tipo_Descuento') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Descuento 
 
 GO 
 
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Cliente 
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Descuento 
 AS 
-    INSERT INTO GAME_OF_JOINS.BI_cliente 
-                (rango_etario) 
-	SELECT
-		DISTINCT GAME_OF_JOINS.BI_Obtener_Rango_Etario(clie_fecha_nac)
-	FROM
-		GAME_OF_JOINS.cliente
-
-GO 
-
---canal 
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Canal') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Canal 
-
-GO 
-
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Canal 
-AS 
-    INSERT INTO GAME_OF_JOINS.BI_canal 
+    INSERT INTO GAME_OF_JOINS.BI_tipo_descuento
                 (descripcion) 
 	SELECT
-		DISTINCT cana_canal
+		DISTINCT descu_tipo
 	FROM
-		GAME_OF_JOINS.canal
+		GAME_OF_JOINS.descuento
 
-GO 
-
---medio_pago 
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Medio_Pago') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Medio_Pago 
-
-GO 
-
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Medio_Pago 
-AS 
-    INSERT INTO GAME_OF_JOINS.BI_medio_pago 
-                (descripcion) 
-	SELECT
-		DISTINCT mepa_medio_pago
-	FROM
-		GAME_OF_JOINS.medio_pago
-
-GO 
+GO
 
 --tipo_envio 
 IF Object_id('GAME_OF_JOINS.BI_Migrar_Tipo_Envio') IS NOT NULL 
@@ -758,629 +828,109 @@ AS
 
 GO 
 
---tipo_descuento
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Tipo_Descuento') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Descuento 
+--tipo_medio_pago 
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Tipo_Medio_Pago') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Medio_Pago 
 
 GO 
 
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Descuento 
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Tipo_Medio_Pago 
 AS 
-    INSERT INTO GAME_OF_JOINS.BI_tipo_descuento
+    INSERT INTO GAME_OF_JOINS.BI_tipo_medio_pago 
                 (descripcion) 
 	SELECT
-		DISTINCT descu_tipo
+		DISTINCT mepa_medio_pago
 	FROM
-		GAME_OF_JOINS.descuento
-
-GO
-
-
---venta
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta 
+		GAME_OF_JOINS.medio_pago
 
 GO 
 
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta
+------------------------------------------------
+----------- Migración de hechos ----------------
+------------------------------------------------
+
+--hechos_compra
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Hechos_Compra') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Compra
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Compra
 AS 
-	INSERT INTO GAME_OF_JOINS.BI_venta
-	(venta_codigo, total, valor_envio, mepa_costo, mepa_descuento, id_tiempo, id_cliente, id_provincia, id_canal, id_tipo_envio, id_medio_pago)
+	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_hechos_compra
+	(id_producto, id_proveedor, id_tiempo, cantidad, precio_unitario)
 
 	SELECT
-		v.vent_codigo,
-		v.vent_total,
-		ve.veen_precio,
-		mp.vmep_costo,
-		ISNULL((
-		SELECT
-			vd.vede_importe
-		FROM
-			GAME_OF_JOINS.venta v1
-		INNER JOIN GAME_OF_JOINS.venta_descuento vd ON
-			v1.vent_codigo = vd.vede_venta_codigo
-		INNER JOIN GAME_OF_JOINS.descuento d ON
-			vd.vede_descuento = d.descu_id
-		WHERE
-			v1.vent_codigo = v.vent_codigo
-			AND d.descu_tipo = 'Medio Pago'),
-		0) AS mepa_descuento,
-		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(v.vent_fecha) AS id_tiempo,
-		GAME_OF_JOINS.BI_Obtener_Id_Cliente(v.vent_cliente) AS id_cliente,
-		GAME_OF_JOINS.BI_Obtener_Id_Provincia(v.vent_cliente) AS id_provincia,
-		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo) AS id_canal,
-		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Envio(v.vent_codigo) AS id_tipo_envio,
-		GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago(v.vent_venta_medio_pago) AS id_medio_pago
-	FROM
-		GAME_OF_JOINS.venta v
-	INNER JOIN GAME_OF_JOINS.venta_envio ve ON
-		v.vent_codigo = ve.veen_venta_codigo
-	INNER JOIN GAME_OF_JOINS.venta_medio_pago mp ON
-		v.vent_venta_medio_pago = mp.vmep_id
-GO 
-
---venta_descuento
-
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta_Descuento') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Descuento 
-
-GO 
-
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Descuento 
-AS 
-
-	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_venta_descuento
-	(venta_codigo, id_tipo_descuento, importe)
-
-	SELECT
-		vd.vede_venta_codigo,
-		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento(d.descu_tipo) AS id_tipo_descuento,
-		vd.vede_importe
-	FROM
-		GAME_OF_JOINS.venta_descuento vd
-	INNER JOIN GAME_OF_JOINS.descuento d ON
-		vd.vede_descuento = d.descu_id
-GO
-
---proveedor 
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Proveedor') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Proveedor 
-
-GO 
-
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Proveedor 
-AS 
-    INSERT INTO GAME_OF_JOINS.BI_proveedor 
-                (cuit) 
-	SELECT
-		DISTINCT prove_cuit
-	FROM
-		GAME_OF_JOINS.proveedor
-
-GO 
-
---producto_categoria 
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Producto_Categoria') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto_Categoria 
-
-GO 
-
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto_Categoria
-AS 
-    INSERT INTO GAME_OF_JOINS.BI_producto_categoria
-                (descripcion) 
-	SELECT
-		DISTINCT pcat_categoria
-	FROM
-		GAME_OF_JOINS.producto_categoria
-
-GO 
-
---provincia 
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Provincia') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Provincia 
-
-GO 
-
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Provincia
-AS 
-    INSERT INTO GAME_OF_JOINS.BI_provincia
-                (descripcion) 
-	SELECT
-		DISTINCT prov_provincia
-	FROM
-		GAME_OF_JOINS.provincia
-
-GO
-
---producto 
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Producto') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto 
-
-GO 
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Producto
-AS 
-    INSERT INTO GAME_OF_JOINS.BI_producto
-                (codigo, descripcion) 
-	SELECT
-		DISTINCT	prod_codigo,
-					prod_descripcion
-	FROM
-		GAME_OF_JOINS.producto
-
-GO
-
---compra_producto 
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Compra_Producto') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Compra_Producto 
-
-GO 
-
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Compra_Producto
-AS 
-    INSERT INTO GAME_OF_JOINS.BI_compra_producto
-                (id_producto, precio_unitario, id_proveedor, cantidad, id_tiempo) 
-	SELECT
-		GAME_OF_JOINS.BI_Obtener_Id_Producto(cp.cpro_producto_codigo),
-		cp.cpro_precio,
-		GAME_OF_JOINS.BI_Obtener_Id_Proveedor(co.comp_proveedor_cuit),
-		cp.cpro_cantidad,
-		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(co.comp_fecha)		
+		GAME_OF_JOINS.BI_Obtener_Id_Producto(cp.cpro_producto_codigo) AS id_producto,
+		GAME_OF_JOINS.BI_Obtener_Id_Proveedor(co.comp_proveedor_cuit) AS id_proveedor,
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(co.comp_fecha) AS id_tiempo,
+		SUM(cp.cpro_cantidad) AS cantidad,
+		MAX(cp.cpro_precio) AS precio_unitario
 	FROM
 		GAME_OF_JOINS.compra_producto cp
-	INNER JOIN
-		GAME_OF_JOINS.compra co
-	ON	cp.cpro_compra_numero = co.comp_numero
+	INNER JOIN GAME_OF_JOINS.compra co ON
+		cp.cpro_compra_numero = co.comp_numero
+	GROUP BY
+		GAME_OF_JOINS.BI_Obtener_Id_Producto(cp.cpro_producto_codigo),
+		GAME_OF_JOINS.BI_Obtener_Id_Proveedor(co.comp_proveedor_cuit),
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(co.comp_fecha)
 GO
 
---compra
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Compra') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Compra
+
+--hechos_venta
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Hechos_Venta') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Venta
 
 GO 
 
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Compra
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Venta
 AS 
-    INSERT INTO GAME_OF_JOINS.BI_compra
-                (total, id_proveedor, id_tiempo) 
+	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_hechos_venta
+	(id_tiempo, id_cliente, id_canal, id_categoria, id_producto, cantidad, precio_unitario)
+
 	SELECT
-		comp_total,
-		GAME_OF_JOINS.BI_Obtener_Id_Proveedor(comp_proveedor_cuit),
-		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(comp_fecha)		
-	FROM
-		GAME_OF_JOINS.compra
-GO
-
---venta producto
-IF Object_id('GAME_OF_JOINS.BI_Migrar_Venta_Producto') IS NOT NULL 
-  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Producto
-
-GO 
-
-CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Venta_Producto
-AS 
-    INSERT INTO GAME_OF_JOINS.BI_venta_producto
-                (id_producto, id_categoria, precio, cantidad, id_tiempo, id_cliente) 
-	SELECT
-		GAME_OF_JOINS.BI_Obtener_Id_Producto(vp.vpro_producto_codigo),
-		GAME_OF_JOINS.BI_Obtener_Id_Categoria(pc.pcat_categoria),
-		vp.vpro_precio,
-		vp.vpro_cantidad,
-		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(ve.vent_fecha),
-		GAME_OF_JOINS.BI_Obtener_Id_Cliente(ve.vent_cliente)
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(ve.vent_fecha) AS id_tiempo,
+		GAME_OF_JOINS.BI_Obtener_Id_Cliente(ve.vent_cliente) AS id_cliente,
+		GAME_OF_JOINS.BI_Obtener_Id_Canal(vp.vpro_venta_codigo) AS id_canal,
+		GAME_OF_JOINS.BI_Obtener_Id_Categoria(pc.pcat_categoria) AS id_categoria,
+		GAME_OF_JOINS.BI_Obtener_Id_Producto(vp.vpro_producto_codigo) AS id_producto,
+		SUM(vp.vpro_cantidad) AS cantidad,
+		MAX(vp.vpro_precio) AS precio_unitario
 	FROM
 		GAME_OF_JOINS.venta_producto vp
-	INNER JOIN
-		GAME_OF_JOINS.venta ve
-	ON	vp.vpro_venta_codigo = ve.vent_codigo
-	INNER JOIN
-		GAME_OF_JOINS.producto pr
-	ON	vp.vpro_producto_codigo = pr.prod_codigo
-	INNER JOIN
-		GAME_OF_JOINS.producto_categoria pc
-	ON
+	INNER JOIN GAME_OF_JOINS.venta ve ON
+		vp.vpro_venta_codigo = ve.vent_codigo
+	INNER JOIN GAME_OF_JOINS.producto pr ON
+		vp.vpro_producto_codigo = pr.prod_codigo
+	INNER JOIN GAME_OF_JOINS.producto_categoria pc ON
 		pr.prod_categoria = pc.pcat_id
-GO 
-
-------------------------------------------------
----------- Vistas para modelo BI ---------------
-------------------------------------------------
-
-
-/*
- * Las ganancias mensuales de cada canal de venta.
- * Se entiende por ganancias al total de las ventas, menos el total de las
- * compras, menos los costos de transacción totales aplicados asociados los
- * medios de pagos utilizados en las mismas.
- */
-
- IF Object_id('GAME_OF_JOINS.BI_VW_Ganancias_Mensuales') IS NOT NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
-
-GO 
-
-CREATE VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
-AS
-	SELECT		ti.anio anio,
-				ti.mes mes,
-				ca.descripcion canal_de_venta,
-				ISNULL(SUM(ve.total), 0) - ISNULL(SUM(ve.mepa_costo), 0) -	ISNULL((SELECT SUM(co.total) FROM GAME_OF_JOINS.BI_compra co WHERE co.id_tiempo = ve.id_tiempo), 0) ganancia_mensual
-	FROM		GAME_OF_JOINS.BI_venta ve
-	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
-	ON			ve.id_tiempo = ti.id_tiempo
-	INNER JOIN	GAME_OF_JOINS.BI_canal ca
-	ON			ve.id_canal = ca.id_canal
-	GROUP BY	ve.id_tiempo, ti.anio, ti.mes, ve.id_canal, ca.descripcion
-GO
-
-
-/*
- * Los 5 productos con mayor rentabilidad anual, con sus respectivos %
- * Se entiende por rentabilidad a los ingresos generados por el producto
- * (ventas) durante el periodo menos la inversión realizada en el producto
- * (compras) durante el periodo, todo esto sobre dichos ingresos.
- * Valor expresado en porcentaje.
- * Para simplificar, no es necesario tener en cuenta los descuentos aplicados.
- */
-
-IF Object_id('GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual') IS NOT NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual
-
-GO 
-
-CREATE VIEW GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual
-AS
-
-WITH ranking_productos_rentabilidad AS (
-	SELECT		pr.codigo codigo,
-				ti.anio anio,
-				100 *(
-					ISNULL(SUM(vp.precio * vp.cantidad), 0)
-					-
-					ISNULL((
-						SELECT			SUM(cp.precio_unitario * cp.cantidad)
-						FROM			GAME_OF_JOINS.BI_compra_producto cp
-						INNER JOIN		GAME_OF_JOINS.BI_tiempo ti2
-						ON				cp.id_tiempo = ti2.id_tiempo
-						WHERE			cp.id_producto = vp.id_producto AND ti2.anio = ti.anio
-						GROUP BY		cp.id_producto
-					), 0)
-				)
-				/
-				(SUM(vp.precio * vp.cantidad)) rentabilidad,
-				ROW_NUMBER()
-				OVER (
-					PARTITION BY ti.anio
-					ORDER BY	100 * (
-									ISNULL(SUM(vp.precio * vp.cantidad), 0)
-									-
-									ISNULL((
-										SELECT			SUM(cp.precio_unitario * cp.cantidad)
-										FROM			GAME_OF_JOINS.BI_compra_producto cp
-										INNER JOIN		GAME_OF_JOINS.BI_tiempo ti2
-										ON				cp.id_tiempo = ti2.id_tiempo
-										WHERE			cp.id_producto = vp.id_producto AND ti2.anio = ti.anio
-										GROUP BY		cp.id_producto
-									), 0)
-								)
-								/
-								(SUM(vp.precio * vp.cantidad))
-					DESC) AS ranking
-	FROM		GAME_OF_JOINS.BI_venta_producto vp
-	INNER JOIN	GAME_OF_JOINS.BI_producto pr
-	ON			vp.id_producto = pr.id_producto
-	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
-	ON			vp.id_tiempo = ti.id_tiempo
-	GROUP BY	vp.id_producto, pr.codigo, ti.anio
-	)
-	SELECT
-		codigo codigo,
-		anio anio,
-		rentabilidad rentabilidad
-	FROM
-		ranking_productos_rentabilidad
-	WHERE
-		ranking <= 5
-GO
-
-/*
- * Las 5 categorías de productos más vendidos por rango etario de clientes
- * por mes.
- */
-
-IF Object_id('GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario') IS NOT 
-   NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario 
-
-GO 
-
-CREATE VIEW GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario 
-AS 
-	WITH ranking_categorias_por_edad AS (
-	SELECT
-		tie.anio AS anio,
-		tie.mes AS mes,
-		c.rango_etario AS rango_etario,
-		pc.descripcion AS categoria,
-		SUM(vp.cantidad) AS cantidad_vendida,
-		ROW_NUMBER() OVER (PARTITION BY tie.mes, c.rango_etario
-	ORDER BY
-		SUM(vp.cantidad) DESC) AS ranking
-	FROM
-		GAME_OF_JOINS.BI_venta_producto vp
-	INNER JOIN GAME_OF_JOINS.BI_producto_categoria pc ON
-		vp.id_categoria = pc.id_categoria
-	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
-		vp.id_tiempo = tie.id_tiempo
-	INNER JOIN GAME_OF_JOINS.BI_cliente c ON
-		vp.id_cliente = c.id_cliente
 	GROUP BY
-		tie.anio,
-		tie.mes,
-		c.rango_etario,
-		pc.descripcion )
-	SELECT
-		anio,
-		mes,
-		rango_etario,
-		categoria,
-		cantidad_vendida
-	FROM
-		ranking_categorias_por_edad
-	WHERE
-		ranking <= 5
-
-GO
-
-/*
- * Total de Ingresos por cada medio de pago por mes, descontando los costos
- * por medio de pago (en caso que aplique) y descuentos por medio de pago
- * (en caso que aplique)
- */
-
-IF Object_id('GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago') IS NOT NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
-
-GO 
-
-CREATE VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
-AS
-	SELECT		ti.anio anio,
-				ti.mes mes,
-				mp.descripcion medio_de_pago,
-				SUM(ve.total) - SUM(ve.mepa_costo) - SUM(ve.mepa_descuento) ingreso_mensual
-	FROM		GAME_OF_JOINS.BI_venta ve
-	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
-	ON			ve.id_tiempo = ti.id_tiempo
-	INNER JOIN	GAME_OF_JOINS.BI_medio_pago mp
-	ON			ve.id_medio_pago = mp.id_medio_pago
-	GROUP BY	ve.id_tiempo, ti.anio, ti.mes, mp.id_medio_pago, mp.descripcion
-GO
-
-
-/* 
- * Importe total en descuentos aplicados según su tipo de descuento, por
- * canal de venta, por mes. Se entiende por tipo de descuento como los
- * correspondientes a envío, medio de pago, cupones, etc)
- */
-
-IF Object_id('GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo') IS NOT NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo
-
-GO 
-
-CREATE VIEW GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo
-AS
-	SELECT		ti.anio anio,
-				ti.mes mes,
-				ca.descripcion canal,
-				td.descripcion tipo_de_descuento,
-				SUM(vd.importe) importe_mensual
-	FROM		GAME_OF_JOINS.BI_venta ve
-	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
-	ON			ve.id_tiempo = ti.id_tiempo
-	INNER JOIN	GAME_OF_JOINS.BI_canal ca
-	ON			ve.id_canal = ca.id_canal
-	INNER JOIN	GAME_OF_JOINS.BI_venta_descuento vd
-	ON			ve.venta_codigo = vd.venta_codigo
-	INNER JOIN	GAME_OF_JOINS.BI_tipo_descuento td
-	ON			vd.id_tipo_descuento = td.id_tipo_descuento
-	GROUP BY	ve.id_tiempo, ti.anio, ti.mes, ca.id_canal, ca.descripcion, td.id_tipo_descuento, td.descripcion
-GO
-
-/*
- * Porcentaje de envíos realizados a cada Provincia por mes. El porcentaje
- * debe representar la cantidad de envíos realizados a cada provincia sobre
- * total de envío mensuales.
- */
-
-IF Object_id('GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual') IS NOT 
-   NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual 
-
-GO 
-
-CREATE VIEW GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual 
-AS 
-	SELECT
-		tie.anio AS anio,
-		tie.mes AS mes,
-		p.descripcion AS provincia,
-		COUNT(*) AS cantidad_enviada,
-		(SELECT
-			COUNT(*)
-		FROM
-			GAME_OF_JOINS.BI_venta v1
-		INNER JOIN GAME_OF_JOINS.BI_tiempo tie1 ON
-			v1.id_tiempo = tie1.id_tiempo
-		WHERE
-			tie1.anio = tie.anio
-			AND tie1.mes = tie.mes) AS total_enviado,
-		ROUND(100 * 1.0 * COUNT(*) / (
-		SELECT
-			COUNT(*)
-		FROM
-			GAME_OF_JOINS.BI_venta v1
-		INNER JOIN GAME_OF_JOINS.BI_tiempo tie1 ON
-			v1.id_tiempo = tie1.id_tiempo
-		WHERE
-			tie1.anio = tie.anio
-			AND tie1.mes = tie.mes),2) AS porcentaje_envios
-	FROM
-		GAME_OF_JOINS.BI_venta v
-	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
-		v.id_tiempo = tie.id_tiempo
-	INNER JOIN GAME_OF_JOINS.BI_provincia p ON
-		v.id_provincia = p.id_provincia
-	GROUP BY
-		tie.anio,
-		tie.mes,
-		p.descripcion
-GO
-
-/* 
- * Valor promedio de envío por Provincia por Medio De Envío anual.
- */
-
-IF Object_id('GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia') IS NOT 
-   NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia 
-
-GO 
-
-CREATE VIEW GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia 
-AS 
-	SELECT
-		tie.anio AS anio,
-		p.descripcion AS provincia,
-		te.descripcion AS medio_envio,
-		AVG(v.valor_envio) AS valor_promedio_envio
-	FROM
-		GAME_OF_JOINS.BI_venta v
-	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
-		v.id_tiempo = tie.id_tiempo
-	INNER JOIN GAME_OF_JOINS.BI_tipo_envio te ON
-		v.id_tipo_envio = te.id_tipo_envio
-	INNER JOIN GAME_OF_JOINS.BI_provincia p ON
-		v.id_provincia = p.id_provincia
-	GROUP BY
-		tie.anio,
-		p.descripcion,
-		te.descripcion
-GO
-
-/*
- * Aumento promedio de precios de cada proveedor anual. Para calcular este
- * indicador se debe tomar como referencia el máximo precio por año menos
- * el mínimo todo esto divido el mínimo precio del año. Teniendo en cuenta
- * que los precios siempre van en aumento.
- */
-
-IF Object_id('GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor') IS NOT 
-   NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor 
-
-GO 
-
-CREATE VIEW GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor 
-AS 
-	WITH aumentos_proveedores AS (
-	SELECT
-		tie.anio AS anio,
-		p.cuit AS proveedor,
-		MAX(precio_unitario) AS maximo,
-		MIN(precio_unitario) AS minimo,
-		(MAX(precio_unitario) - MIN(precio_unitario)) / MIN(precio_unitario) * 100 AS porcentaje_aumento
-	FROM
-		GAME_OF_JOINS.BI_compra_producto cp
-	INNER JOIN GAME_OF_JOINS.BI_Proveedor p ON
-		cp.id_proveedor = p.id_proveedor
-	INNER JOIN GAME_OF_JOINS.BI_tiempo tie
-		ON cp.id_tiempo = tie.id_tiempo
-	GROUP BY
-		tie.anio,
-		p.cuit,
-		cp.id_producto )
-	SELECT
-		anio,
-		proveedor,
-		ROUND(AVG(porcentaje_aumento), 2) AS aumento_promedio
-	FROM
-		aumentos_proveedores
-	GROUP BY
-		anio,
-		proveedor
-
-GO
-
-/*
- * Los 3 productos con mayor cantidad de reposición por mes. 
- */
-
-IF Object_id('GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion') IS NOT 
-   NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion 
-
-GO 
-
-CREATE VIEW GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion 
-AS 
-	WITH ranking_productos_reposicion AS (
-	    SELECT
-		p.codigo AS producto_codigo,
-		p.descripcion AS producto_descripcion,
-		tie.anio AS anio,
-		tie.mes AS mes,
-		SUM(cp.cantidad) AS cantidad,
-		ROW_NUMBER()
-	    OVER (
-	        PARTITION BY tie.mes
-	        ORDER BY SUM(cp.cantidad) DESC
-	    ) AS ranking 
-	FROM
-		GAME_OF_JOINS.BI_compra_producto cp
-		INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
-		cp.id_tiempo = tie.id_tiempo
-		INNER JOIN GAME_OF_JOINS.BI_producto p
-		ON cp.id_producto = p.id_producto
-	GROUP BY
-		p.codigo,
-		p.descripcion,
-		tie.anio,
-		tie.mes
-	)
-	SELECT
-		anio,
-		mes,
-		producto_codigo,
-		producto_descripcion,
-		cantidad
-	FROM
-		ranking_productos_reposicion
-	WHERE
-		ranking <= 3
-
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(ve.vent_fecha),
+		GAME_OF_JOINS.BI_Obtener_Id_Cliente(ve.vent_cliente),
+		GAME_OF_JOINS.BI_Obtener_Id_Canal(vp.vpro_venta_codigo),
+		GAME_OF_JOINS.BI_Obtener_Id_Categoria(pc.pcat_categoria),
+		GAME_OF_JOINS.BI_Obtener_Id_Producto(vp.vpro_producto_codigo)
 GO 
 
 ------------------------------------------------
 ------------ Migracion de datos ----------------
 ------------------------------------------------
 
-EXEC GAME_OF_JOINS.BI_Migrar_Tiempo
-EXEC GAME_OF_JOINS.BI_Migrar_Cliente
 EXEC GAME_OF_JOINS.BI_Migrar_Canal
+EXEC GAME_OF_JOINS.BI_Migrar_Categoria_Producto
+EXEC GAME_OF_JOINS.BI_Migrar_Cliente
 EXEC GAME_OF_JOINS.BI_Migrar_Producto
-EXEC GAME_OF_JOINS.BI_Migrar_Producto_Categoria
-EXEC GAME_OF_JOINS.BI_Migrar_Provincia
 EXEC GAME_OF_JOINS.BI_Migrar_Proveedor
-EXEC GAME_OF_JOINS.BI_Migrar_Medio_Pago
-EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Envio
+EXEC GAME_OF_JOINS.BI_Migrar_Provincia
+EXEC GAME_OF_JOINS.BI_Migrar_Tiempo
 EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Descuento
-EXEC GAME_OF_JOINS.BI_Migrar_Venta
-EXEC GAME_OF_JOINS.BI_Migrar_Compra
-EXEC GAME_OF_JOINS.BI_Migrar_Venta_Descuento
-EXEC GAME_OF_JOINS.BI_Migrar_Venta_Producto
-EXEC GAME_OF_JOINS.BI_Migrar_Compra_Producto
+EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Envio
+EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Medio_Pago
+EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Compra
+--EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Descuento
+--EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Envio
+--EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Medio_Pago
+EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Venta
 
 GO
 
@@ -1405,3 +955,6 @@ GO
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia ORDER BY anio, provincia, medio_envio
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual ORDER BY anio, mes, provincia
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario ORDER BY anio, mes, rango_etario, categoria, cantidad_vendida DESC
+
+
+SELECT * FROM GAME_OF_JOINS.table_row_count ORDER BY table_name ASC
