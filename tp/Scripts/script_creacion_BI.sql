@@ -910,6 +910,245 @@ AS
 		GAME_OF_JOINS.BI_Obtener_Id_Canal(vp.vpro_venta_codigo),
 		GAME_OF_JOINS.BI_Obtener_Id_Categoria(pc.pcat_categoria),
 		GAME_OF_JOINS.BI_Obtener_Id_Producto(vp.vpro_producto_codigo)
+GO
+
+--hechos_Envio
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Hechos_Envio') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Envio
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Envio
+AS 
+	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_hechos_envio
+	(id_provincia, id_tiempo, id_tipo_envio, cantidad_envios, costo_envio)
+	SELECT
+		GAME_OF_JOINS.BI_Obtener_Id_Provincia(venta.vent_cliente) id_provincia,
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(venta.vent_fecha) AS id_tiempo,
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Envio(venta.vent_codigo) AS id_tipo_envio,
+		COUNT(*) AS cantidad,
+		SUM(envio.veen_precio) AS costo
+	FROM
+		GAME_OF_JOINS.venta_envio envio
+	INNER JOIN GAME_OF_JOINS.venta venta ON
+		envio.veen_venta_codigo = venta.vent_codigo
+	GROUP BY
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(venta.vent_fecha),
+		GAME_OF_JOINS.BI_Obtener_Id_Provincia(venta.vent_cliente),
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Envio(venta.vent_codigo)
+GO
+
+------------------------------------------------
+---------- Vistas para modelo BI ---------------
+------------------------------------------------
+
+
+/*
+ * Las ganancias mensuales de cada canal de venta.
+ * Se entiende por ganancias al total de las ventas, menos el total de las
+ * compras, menos los costos de transacción totales aplicados asociados los
+ * medios de pagos utilizados en las mismas.
+ */
+
+ IF Object_id('GAME_OF_JOINS.BI_VW_Ganancias_Mensuales') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
+AS
+
+	SELECT 1	--HACER
+
+GO
+
+
+/*
+ * Los 5 productos con mayor rentabilidad anual, con sus respectivos %
+ * Se entiende por rentabilidad a los ingresos generados por el producto
+ * (ventas) durante el periodo menos la inversión realizada en el producto
+ * (compras) durante el periodo, todo esto sobre dichos ingresos.
+ * Valor expresado en porcentaje.
+ * Para simplificar, no es necesario tener en cuenta los descuentos aplicados.
+ */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual
+AS
+
+	SELECT 1	--HACER		
+
+GO
+
+/*
+ * Las 5 categorías de productos más vendidos por rango etario de clientes
+ * por mes.
+ */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
+AS
+
+	SELECT 1	--HACER
+
+GO
+
+/*
+ * Total de Ingresos por cada medio de pago por mes, descontando los costos
+ * por medio de pago (en caso que aplique) y descuentos por medio de pago
+ * (en caso que aplique)
+ */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
+AS
+
+	SELECT 1 --HACER
+
+GO
+
+
+/* 
+ * Importe total en descuentos aplicados según su tipo de descuento, por
+ * canal de venta, por mes. Se entiende por tipo de descuento como los
+ * correspondientes a envío, medio de pago, cupones, etc)
+ */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo
+AS
+
+	SELECT 1 --HACER
+
+GO
+
+/*
+ * Porcentaje de envíos realizados a cada Provincia por mes. El porcentaje
+ * debe representar la cantidad de envíos realizados a cada provincia sobre
+ * total de envío mensuales.
+ */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+AS 
+	SELECT
+		ti.anio AS anio,
+		ti.mes AS mes,
+		pr.descripcion AS provincia,
+		COUNT(*) AS cantidad_enviada,
+		(SELECT
+			COUNT(*)
+		FROM
+			GAME_OF_JOINS.BI_hechos_envio he1
+		INNER JOIN GAME_OF_JOINS.BI_tiempo ti1 ON
+			he1.id_tiempo = ti1.id_tiempo
+		WHERE
+			ti1.anio = ti.anio
+			AND ti1.mes = ti.mes) AS total_enviado,
+		ROUND(100 * 1.0 * COUNT(*) / (
+		SELECT
+			COUNT(*)
+		FROM
+			GAME_OF_JOINS.BI_hechos_envio he1
+		INNER JOIN GAME_OF_JOINS.BI_tiempo ti1 ON
+			he1.id_tiempo = ti1.id_tiempo
+		WHERE
+			ti1.anio = ti.anio
+			AND ti1.mes = ti.mes), 2) AS porcentaje_envios
+	FROM
+		GAME_OF_JOINS.BI_hechos_envio he
+	INNER JOIN GAME_OF_JOINS.BI_tiempo ti ON
+		he.id_tiempo = ti.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_provincia pr ON
+		he.id_provincia = pr.id_provincia
+	GROUP BY
+		ti.anio, ti.mes, pr.descripcion
+
+GO
+
+/* 
+ * Valor promedio de envío por Provincia por Medio De Envío anual.
+ */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+AS 
+	SELECT
+		ti.anio AS anio,
+		pr.descripcion AS provincia,
+		te.descripcion AS medio_envio,
+		AVG(he.costo_envio) AS envio_promedio
+	FROM
+		GAME_OF_JOINS.BI_hechos_envio he
+	INNER JOIN GAME_OF_JOINS.BI_tiempo ti ON
+		he.id_tiempo = ti.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_provincia pr ON
+		he.id_provincia = pr.id_provincia
+	INNER JOIN GAME_OF_JOINS.BI_tipo_envio te ON
+		he.id_tipo_envio = te.id_tipo_envio
+	GROUP BY
+		ti.anio, pr.descripcion, te.descripcion
+GO
+
+/*
+ * Aumento promedio de precios de cada proveedor anual. Para calcular este
+ * indicador se debe tomar como referencia el máximo precio por año menos
+ * el mínimo todo esto divido el mínimo precio del año. Teniendo en cuenta
+ * que los precios siempre van en aumento.
+ */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+AS 
+
+	SELECT 1 --HACER
+
+GO
+
+/*
+ * Los 3 productos con mayor cantidad de reposición por mes. 
+ */
+
+IF Object_id('GAME_OF_JOINS.BI_VW_productos_mayor_reposicion') IS NOT 
+   NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+
+GO 
+
+CREATE VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+AS 
+	SELECT 1	--HACER
 GO 
 
 ------------------------------------------------
@@ -928,7 +1167,7 @@ EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Envio
 EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Medio_Pago
 EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Compra
 --EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Descuento
---EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Envio
+EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Envio
 --EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Medio_Pago
 EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Venta
 
