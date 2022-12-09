@@ -876,6 +876,12 @@ AS
 		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(co.comp_fecha)
 GO
 
+--hechos_descuento
+
+
+--hechos_medio_pago
+
+
 
 --hechos_venta
 IF Object_id('GAME_OF_JOINS.BI_Migrar_Hechos_Venta') IS NOT NULL 
@@ -922,6 +928,7 @@ CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Envio
 AS 
 	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_hechos_envio
 	(id_provincia, id_tiempo, id_tipo_envio, cantidad_envios, costo_envio)
+	
 	SELECT
 		GAME_OF_JOINS.BI_Obtener_Id_Provincia(venta.vent_cliente) id_provincia,
 		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(venta.vent_fecha) AS id_tiempo,
@@ -950,15 +957,15 @@ GO
  * medios de pagos utilizados en las mismas.
  */
 
- IF Object_id('GAME_OF_JOINS.BI_VW_Ganancias_Mensuales') IS NOT NULL 
+IF Object_id('GAME_OF_JOINS.BI_VW_Ganancias_Mensuales') IS NOT NULL 
   DROP VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
 
 GO 
 
 CREATE VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
 AS
-
-	SELECT 1	--HACER
+	
+	SELECT 1 AS A --HACER
 
 GO
 
@@ -980,7 +987,56 @@ GO
 CREATE VIEW GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual
 AS
 
-	SELECT 1	--HACER		
+	WITH ranking_productos_rentabilidad AS (
+	SELECT		pr.codigo codigo,
+				ti.anio anio,
+				100 *(
+					ISNULL(SUM(hv.precio_unitario * hv.cantidad), 0)
+					-
+					ISNULL((
+						SELECT			SUM(hc.precio_unitario * hc.cantidad)
+						FROM			GAME_OF_JOINS.BI_hechos_compra hc
+						INNER JOIN		GAME_OF_JOINS.BI_tiempo ti2
+						ON				hc.id_tiempo = ti2.id_tiempo
+						WHERE			hc.id_producto = hv.id_producto AND ti2.anio = ti.anio
+						GROUP BY		hc.id_producto
+					), 0)
+				)
+				/
+				(SUM(hv.precio_unitario * hv.cantidad)) rentabilidad,
+				ROW_NUMBER()
+				OVER (
+					PARTITION BY ti.anio
+					ORDER BY	100 * (
+									ISNULL(SUM(hv.precio_unitario * hv.cantidad), 0)
+									-
+									ISNULL((
+										SELECT			SUM(hc.precio_unitario * hc.cantidad)
+										FROM			GAME_OF_JOINS.BI_hechos_compra hc
+										INNER JOIN		GAME_OF_JOINS.BI_tiempo ti2
+										ON				hc.id_tiempo = ti2.id_tiempo
+										WHERE			hc.id_producto = hv.id_producto AND ti2.anio = ti.anio
+										GROUP BY		hc.id_producto
+									), 0)
+								)
+								/
+								(SUM(hv.precio_unitario * hv.cantidad))
+					DESC) AS ranking
+	FROM		GAME_OF_JOINS.BI_hechos_venta hv
+	INNER JOIN	GAME_OF_JOINS.BI_producto pr
+	ON			hv.id_producto = pr.id_producto
+	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
+	ON			hv.id_tiempo = ti.id_tiempo
+	GROUP BY	hv.id_producto, pr.codigo, ti.anio
+	)
+	SELECT
+		codigo codigo,
+		anio anio,
+		rentabilidad rentabilidad
+	FROM
+		ranking_productos_rentabilidad
+	WHERE
+		ranking <= 5
 
 GO
 
@@ -997,7 +1053,39 @@ GO
 CREATE VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
 AS
 
-	SELECT 1	--HACER
+	WITH ranking_categorias_por_edad AS (
+	SELECT
+		tie.anio AS anio,
+		tie.mes AS mes,
+		cli.rango_etario AS rango_etario,
+		cp.descripcion AS categoria,
+		SUM(hv.cantidad) AS cantidad_vendida,
+		ROW_NUMBER() OVER (PARTITION BY tie.mes, cli.rango_etario
+	ORDER BY
+		SUM(hv.cantidad) DESC) AS ranking
+	FROM
+		GAME_OF_JOINS.BI_hechos_venta hv
+	INNER JOIN GAME_OF_JOINS.BI_categoria_producto cp ON
+		hv.id_categoria = cp.id_categoria
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		hv.id_tiempo = tie.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_cliente cli ON
+		hv.id_cliente = cli.id_cliente
+	GROUP BY
+		tie.anio,
+		tie.mes,
+		cli.rango_etario,
+		cp.descripcion )
+	SELECT
+		anio,
+		mes,
+		rango_etario,
+		categoria,
+		cantidad_vendida
+	FROM
+		ranking_categorias_por_edad
+	WHERE
+		ranking <= 5
 
 GO
 
@@ -1015,7 +1103,7 @@ GO
 CREATE VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
 AS
 
-	SELECT 1 --HACER
+	SELECT 1 AS A	--HACER
 
 GO
 
@@ -1034,7 +1122,7 @@ GO
 CREATE VIEW GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo
 AS
 
-	SELECT 1 --HACER
+	SELECT 1 AS A	--HACER
 
 GO
 
@@ -1056,26 +1144,7 @@ AS
 		ti.anio AS anio,
 		ti.mes AS mes,
 		pr.descripcion AS provincia,
-		COUNT(*) AS cantidad_enviada,
-		(SELECT
-			COUNT(*)
-		FROM
-			GAME_OF_JOINS.BI_hechos_envio he1
-		INNER JOIN GAME_OF_JOINS.BI_tiempo ti1 ON
-			he1.id_tiempo = ti1.id_tiempo
-		WHERE
-			ti1.anio = ti.anio
-			AND ti1.mes = ti.mes) AS total_enviado,
-		ROUND(100 * 1.0 * COUNT(*) / (
-		SELECT
-			COUNT(*)
-		FROM
-			GAME_OF_JOINS.BI_hechos_envio he1
-		INNER JOIN GAME_OF_JOINS.BI_tiempo ti1 ON
-			he1.id_tiempo = ti1.id_tiempo
-		WHERE
-			ti1.anio = ti.anio
-			AND ti1.mes = ti.mes), 2) AS porcentaje_envios
+		ROUND(100 * 1.0 * COUNT(*) / ( SELECT COUNT(*) FROM GAME_OF_JOINS.BI_hechos_envio he1 INNER JOIN GAME_OF_JOINS.BI_tiempo ti1 ON he1.id_tiempo = ti1.id_tiempo WHERE ti1.anio = ti.anio AND ti1.mes = ti.mes), 2) AS porcentaje_envios
 	FROM
 		GAME_OF_JOINS.BI_hechos_envio he
 	INNER JOIN GAME_OF_JOINS.BI_tiempo ti ON
@@ -1083,7 +1152,9 @@ AS
 	INNER JOIN GAME_OF_JOINS.BI_provincia pr ON
 		he.id_provincia = pr.id_provincia
 	GROUP BY
-		ti.anio, ti.mes, pr.descripcion
+		ti.anio,
+		ti.mes,
+		pr.descripcion
 
 GO
 
@@ -1113,7 +1184,9 @@ AS
 	INNER JOIN GAME_OF_JOINS.BI_tipo_envio te ON
 		he.id_tipo_envio = te.id_tipo_envio
 	GROUP BY
-		ti.anio, pr.descripcion, te.descripcion
+		ti.anio,
+		pr.descripcion,
+		te.descripcion
 GO
 
 /*
@@ -1132,7 +1205,30 @@ GO
 CREATE VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
 AS 
 
-	SELECT 1 --HACER
+	WITH aumentos_proveedores AS (
+	SELECT
+		tie.anio AS anio,
+		p.cuit AS proveedor,
+		(MAX(hc.precio_unitario) - MIN(hc.precio_unitario)) / MIN(hc.precio_unitario) * 100 AS porcentaje_aumento
+	FROM
+		GAME_OF_JOINS.BI_hechos_compra hc
+	INNER JOIN GAME_OF_JOINS.BI_Proveedor p ON
+		hc.id_proveedor = p.id_proveedor
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		hc.id_tiempo = tie.id_tiempo
+	GROUP BY
+		tie.anio,
+		p.cuit,
+		hc.id_producto )
+	SELECT
+		anio,
+		proveedor,
+		ROUND(AVG(porcentaje_aumento), 2) AS aumento_promedio
+	FROM
+		aumentos_proveedores
+	GROUP BY
+		anio,
+		proveedor
 
 GO
 
@@ -1148,7 +1244,37 @@ GO
 
 CREATE VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
 AS 
-	SELECT 1	--HACER
+	WITH ranking_productos_reposicion AS (
+	SELECT
+		p.codigo AS producto_codigo,
+		p.descripcion AS producto_descripcion,
+		tie.anio AS anio,
+		tie.mes AS mes,
+		SUM(hc.cantidad) AS cantidad,
+		ROW_NUMBER() OVER ( PARTITION BY tie.mes
+	ORDER BY
+		SUM(hc.cantidad) DESC ) AS ranking
+	FROM
+		GAME_OF_JOINS.BI_hechos_compra hc
+	INNER JOIN GAME_OF_JOINS.BI_tiempo tie ON
+		hc.id_tiempo = tie.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_producto p ON
+		hc.id_producto = p.id_producto
+	GROUP BY
+		p.codigo,
+		p.descripcion,
+		tie.anio,
+		tie.mes )
+	SELECT
+		anio,
+		mes,
+		producto_codigo,
+		producto_descripcion,
+		cantidad
+	FROM
+		ranking_productos_reposicion
+	WHERE
+		ranking <= 3
 GO 
 
 ------------------------------------------------
