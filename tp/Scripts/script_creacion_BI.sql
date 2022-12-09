@@ -246,7 +246,7 @@ CREATE TABLE GAME_OF_JOINS.BI_hechos_medio_pago
 	id_tipo_medio_pago INT NOT NULL, --fk
 	id_canal INT NOT NULL, --fk
 	id_tiempo INT NOT NULL, --fk
-	costo_envio DECIMAL(18,2) NOT NULL,
+	costo_transaccion DECIMAL(18,2) NOT NULL,
   ) 
 
 --hechos_venta
@@ -602,13 +602,13 @@ AS
 
 GO 
 
--- devuelve el id_medio_pago de bi en base al id de venta medio de pago del modelo 
-IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago') IS NOT NULL 
-  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago 
+-- devuelve el id_tipo_medio_pago de bi en base al id de venta medio de pago del modelo 
+IF Object_id('GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago') IS NOT NULL 
+  DROP FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago 
 
 GO 
 
-CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Medio_Pago(@venta_medio_pago_modelo INT) 
+CREATE FUNCTION GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago(@venta_medio_pago_modelo INT) 
 RETURNS INT 
 AS 
   BEGIN 
@@ -625,9 +625,9 @@ AS
 			vmp.vmep_id = @venta_medio_pago_modelo
       
 		SELECT
-			@id_medio_pago = id_medio_pago
+			@id_medio_pago = id_tipo_medio_pago
 		FROM
-			GAME_OF_JOINS.BI_medio_pago
+			GAME_OF_JOINS.BI_tipo_medio_pago
 		WHERE
 			descripcion = @medio_pago
 
@@ -880,8 +880,30 @@ GO
 
 
 --hechos_medio_pago
+IF Object_id('GAME_OF_JOINS.BI_Migrar_Hechos_Medio_Pago') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Medio_Pago
 
+GO 
 
+CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Medio_Pago
+AS 
+	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_hechos_medio_pago
+	(id_tipo_medio_pago, id_canal, id_tiempo, costo_transaccion)
+	
+	SELECT
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago(vmp.vmep_id) AS id_tipo_medio_pago,
+		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo) AS id_canal,
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(v.vent_fecha) AS id_tiempo,
+		SUM(vmp.vmep_costo) AS costo_transaccion
+	FROM
+		GAME_OF_JOINS.venta_medio_pago vmp
+	INNER JOIN GAME_OF_JOINS.venta v ON
+		vmp.vmep_id = v.vent_venta_medio_pago
+	GROUP BY
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago(vmp.vmep_id),
+		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo) ,
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(v.vent_fecha)
+GO
 
 --hechos_venta
 IF Object_id('GAME_OF_JOINS.BI_Migrar_Hechos_Venta') IS NOT NULL 
@@ -1103,7 +1125,42 @@ GO
 CREATE VIEW GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago
 AS
 
-	SELECT 1 AS A	--HACER
+	SELECT
+		ti.anio AS anio,
+		ti.mes AS mes,
+		--medio_pago AS medio_pago,
+		SUM(hv.cantidad * hv.precio_unitario) AS total_ventas,
+		(
+		SELECT
+			SUM(hd.valor_total)
+		FROM
+			GAME_OF_JOINS.BI_hechos_descuento hd
+		INNER JOIN GAME_OF_JOINS.BI_tipo_descuento td ON
+			hd.id_tipo_descuento = td.id_tipo_descuento
+		WHERE
+			td.descripcion = 'Medio Pago'
+			AND hd.id_tiempo = ti.id_tiempo) AS descuentos,
+		(
+		SELECT
+			SUM(hmp.costo_transaccion)
+		FROM
+			GAME_OF_JOINS.BI_hechos_medio_pago hmp
+		WHERE
+			hmp.id_tiempo = ti.id_tiempo) AS costos,
+		COUNT(*) AS la_resta_que_falta
+		--faltaría borrar las 3 de arriba después de probar y hacer acá la resta
+	
+		FROM GAME_OF_JOINS.BI_hechos_venta hv
+	INNER JOIN GAME_OF_JOINS.BI_tiempo ti ON
+		hv.id_tiempo = ti.id_tiempo
+		--faltaría agregar la dimensión tipo medio pago a hechos_ventas, sino no podes saber como distribuir los ingresos 
+		--INNER JOIN GAME_OF_JOINS.BI_tipo_medio_pago mp
+		--ON hv.
+	
+		GROUP BY ti.id_tiempo,
+		ti.anio,
+		ti.mes
+		--mp.descripcion
 
 GO
 
@@ -1294,7 +1351,7 @@ EXEC GAME_OF_JOINS.BI_Migrar_Tipo_Medio_Pago
 EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Compra
 --EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Descuento
 EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Envio
---EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Medio_Pago
+EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Medio_Pago
 EXEC GAME_OF_JOINS.BI_Migrar_Hechos_Venta
 
 GO
