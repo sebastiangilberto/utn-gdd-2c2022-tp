@@ -698,9 +698,6 @@ AS
 
 GO 
 
-USE GD2C2022
-
-
 ------------------------------------------------
 --------- Migración de dimensiones -------------
 ------------------------------------------------
@@ -1517,6 +1514,3 @@ GO
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia ORDER BY anio, provincia, medio_envio
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual ORDER BY anio, mes, provincia
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario ORDER BY anio, mes, rango_etario, categoria, cantidad_vendida DESC
-
-
-SELECT * FROM GAME_OF_JOINS.table_row_count ORDER BY table_name ASC
