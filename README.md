@@ -52,11 +52,15 @@ Tener disponible Docker.
 
 Primer se debe crear el Modelo Operativo corriendo el script
 
-    script_creacion_inicial.sql
+```bash
+    time /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'Gdd2022!' -i script_creacion_inicial.sql -o resultado_creacion_inicial.log
+```
 
 Luego podemos crear el Modelo BI corriendo
 
-    script_creacion_BI.sql
+```bash
+    time /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'Gdd2022!' -i script_creacion_BI.sql -o resultado_creacion_BI.log
+```
 
 Ya podemos hacer consultas libremente sobre el modelo OLPT y el OLAP
 

@@ -809,6 +809,17 @@ AS
     INSERT INTO GAME_OF_JOINS.medio_pago
                 (mepa_descuento, mepa_medio_pago, mepa_precio_actual) 
 	SELECT
+		ISNULL((
+		SELECT
+			TOP 1 ROUND(m3.VENTA_DESCUENTO_IMPORTE * 100 / m3.VENTA_TOTAL, 0)
+		FROM
+			gd_esquema.maestra m3
+		WHERE
+			m3.VENTA_MEDIO_PAGO = m.VENTA_MEDIO_PAGO
+			AND m3.VENTA_DESCUENTO_CONCEPTO = m.VENTA_MEDIO_PAGO
+		ORDER BY
+			m3.VENTA_FECHA DESC),
+		0) AS porcentaje_actual,
 		m.VENTA_MEDIO_PAGO,
 		ISNULL((
 		SELECT
@@ -820,18 +831,7 @@ AS
 			AND m2.VENTA_DESCUENTO_CONCEPTO = m.VENTA_MEDIO_PAGO
 		ORDER BY
 			m2.VENTA_FECHA DESC),
-		0) AS costo_actual,
-		ISNULL((
-		SELECT
-			TOP 1 ROUND(m3.VENTA_DESCUENTO_IMPORTE * 100 / m3.VENTA_TOTAL, 0)
-		FROM
-			gd_esquema.maestra m3
-		WHERE
-			m3.VENTA_MEDIO_PAGO = m.VENTA_MEDIO_PAGO
-			AND m3.VENTA_DESCUENTO_CONCEPTO = m.VENTA_MEDIO_PAGO
-		ORDER BY
-			m3.VENTA_FECHA DESC),
-		0) AS porcentaje_actual
+		0) AS costo_actual
 	FROM
 		gd_esquema.maestra m
 	WHERE
