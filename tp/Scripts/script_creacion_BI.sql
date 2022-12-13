@@ -85,7 +85,34 @@ AS
     DECLARE query_cursor CURSOR FOR  
     SELECT 'DROP PROCEDURE GAME_OF_JOINS.' + name
                FROM  sys.procedures 
-               WHERE schema_id = (SELECT schema_id FROM sys.schemas WHERE name = 'GAME_OF_JOINS') AND name LIKE 'BI_Migrar_%'
+               WHERE schema_id = (SELECT schema_id FROM sys.schemas WHERE name = 'GAME_OF_JOINS') AND (name LIKE 'BI_Obtener%' OR name LIKE 'BI_Migrar%')
+      OPEN query_cursor 
+    FETCH NEXT FROM query_cursor INTO @query 
+    WHILE @@FETCH_STATUS = 0 
+      BEGIN 
+          EXEC sp_executesql 
+            @query 
+          FETCH NEXT FROM query_cursor INTO @query 
+      END 
+    CLOSE query_cursor 
+    DEALLOCATE query_cursor 
+
+GO 
+
+IF Object_id('GAME_OF_JOINS.BI_Drop_All_Functions') IS NOT NULL 
+  DROP PROCEDURE GAME_OF_JOINS.BI_Drop_All_Functions
+
+GO 
+
+CREATE PROCEDURE GAME_OF_JOINS.BI_Drop_All_Functions
+AS 
+    DECLARE @query nvarchar(255) 
+    DECLARE query_cursor CURSOR FOR  
+    SELECT 'DROP FUNCTION GAME_OF_JOINS.' + name
+               FROM sys.sql_modules m
+               INNER JOIN sys.objects o 
+        	 	ON m.object_id = o.object_id
+               WHERE type_desc like '%function%'
       OPEN query_cursor 
     FETCH NEXT FROM query_cursor INTO @query 
     WHILE @@FETCH_STATUS = 0 
@@ -225,7 +252,7 @@ CREATE TABLE GAME_OF_JOINS.BI_hechos_descuento
 	id_canal INT NOT NULL, --fk
 	id_tiempo INT NOT NULL, --fk
 	id_tipo_descuento INT NOT NULL, --fk
-	valor_total DECIMAL(18,2) NOT NULL,
+	descuento DECIMAL(18,2) NOT NULL,
   ) 
 
 --hechos_envio
@@ -246,6 +273,8 @@ CREATE TABLE GAME_OF_JOINS.BI_hechos_medio_pago
 	id_tipo_medio_pago INT NOT NULL, --fk
 	id_canal INT NOT NULL, --fk
 	id_tiempo INT NOT NULL, --fk
+	id_tipo_descuento INT NOT NULL, --fk
+	descuento DECIMAL(18,2) NOT NULL,
 	costo_transaccion DECIMAL(18,2) NOT NULL,
   ) 
 
@@ -258,6 +287,7 @@ CREATE TABLE GAME_OF_JOINS.BI_hechos_venta
 	id_canal INT NOT NULL, --fk
 	id_categoria INT NOT NULL, --fk
 	id_producto INT NOT NULL, --fk
+	id_tipo_medio_pago INT NOT NULL, --fk
 	cantidad DECIMAL(18,0) NOT NULL,
 	precio_unitario DECIMAL(18,2) NOT NULL,
   )
@@ -315,6 +345,9 @@ ALTER TABLE GAME_OF_JOINS.BI_hechos_medio_pago
 ALTER TABLE GAME_OF_JOINS.BI_hechos_medio_pago
   ADD CONSTRAINT fk_BI_hechos_medio_pago_id_canal FOREIGN KEY (id_canal) REFERENCES GAME_OF_JOINS.BI_canal(id_canal) 
 
+ALTER TABLE GAME_OF_JOINS.BI_hechos_medio_pago
+  ADD CONSTRAINT fk_BI_hechos_medio_pago_id_tipo_descuento FOREIGN KEY (id_tipo_descuento) REFERENCES GAME_OF_JOINS.BI_tipo_descuento(id_tipo_descuento) 
+
 GO
 
 --hechos_venta
@@ -332,6 +365,9 @@ ALTER TABLE GAME_OF_JOINS.BI_hechos_venta
 
 ALTER TABLE GAME_OF_JOINS.BI_hechos_venta
   ADD CONSTRAINT fk_BI_hechos_venta_id_producto FOREIGN KEY (id_producto) REFERENCES GAME_OF_JOINS.BI_producto(id_producto) 
+
+ALTER TABLE GAME_OF_JOINS.BI_hechos_venta
+  ADD CONSTRAINT fk_BI_hechos_venta_id_tipo_medio_pago FOREIGN KEY (id_tipo_medio_pago) REFERENCES GAME_OF_JOINS.BI_tipo_medio_pago(id_tipo_medio_pago) 
 
 GO
 
@@ -618,11 +654,13 @@ AS
 		SELECT
 			@medio_pago = mp.mepa_medio_pago
 		FROM
-			GAME_OF_JOINS.venta_medio_pago vmp
+			GAME_OF_JOINS.venta v
+		INNER JOIN GAME_OF_JOINS.venta_medio_pago vmp ON
+			v.vent_venta_medio_pago = vmp.vmep_id
 		INNER JOIN GAME_OF_JOINS.medio_pago mp ON
 			vmp.vmep_medio_pago = mp.mepa_id
 		WHERE
-			vmp.vmep_id = @venta_medio_pago_modelo
+			v.vent_codigo = @venta_medio_pago_modelo
       
 		SELECT
 			@id_medio_pago = id_tipo_medio_pago
@@ -888,29 +926,39 @@ GO
 CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Descuento
 AS 
 	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_hechos_descuento
-	(id_canal, id_tiempo, id_tipo_descuento, valor_total)
+	(id_canal, id_tiempo, id_tipo_descuento, descuento)
 	
+	--descuentos especial y envio gratis
 	SELECT
 		GAME_OF_JOINS.BI_Obtener_Id_Canal(vd.vede_venta_codigo) AS id_canal,
 		GAME_OF_JOINS.BI_OBtener_Id_Tiempo(v.vent_fecha) AS id_tiempo,
 		GAME_OF_JOINS.BI_OBtener_Id_Tipo_Descuento(d.descu_tipo) AS id_tipo_descuento,
-		SUM(vd.vede_importe) AS valor_total
+		SUM(vd.vede_importe) AS descuento
 	FROM
 		GAME_OF_JOINS.venta_descuento vd
 	INNER JOIN GAME_OF_JOINS.venta v ON
 		vd.vede_venta_codigo = v.vent_codigo
 	INNER JOIN GAME_OF_JOINS.descuento d ON
 		vd.vede_descuento = d.descu_id
+	WHERE
+		d.descu_id <> (
+		SELECT
+			descu_id
+		FROM
+			GAME_OF_JOINS.descuento
+		WHERE
+			descu_tipo = 'Medio Pago' )
 	GROUP BY
 		GAME_OF_JOINS.BI_Obtener_Id_Canal(vd.vede_venta_codigo),
 		GAME_OF_JOINS.BI_OBtener_Id_Tiempo(v.vent_fecha),
 		GAME_OF_JOINS.BI_OBtener_Id_Tipo_Descuento(d.descu_tipo)
 	UNION
+	--descuentos por cupones
 	SELECT
 		GAME_OF_JOINS.BI_Obtener_Id_Canal(vc.vecu_venta_codigo) AS id_canal,
 		GAME_OF_JOINS.BI_OBtener_Id_Tiempo(v.vent_fecha) AS id_tiempo,
 		GAME_OF_JOINS.BI_OBtener_Id_Tipo_Descuento('Cupon') AS id_tipo_descuento,
-		SUM(vc.vecu_importe) AS valor_total
+		SUM(vc.vecu_importe) AS descuento
 	FROM
 		GAME_OF_JOINS.venta_cupon vc
 	INNER JOIN GAME_OF_JOINS.venta v ON
@@ -930,21 +978,37 @@ GO
 CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Medio_Pago
 AS 
 	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_hechos_medio_pago
-	(id_tipo_medio_pago, id_canal, id_tiempo, costo_transaccion)
+	(id_tipo_medio_pago, id_canal, id_tiempo, id_tipo_descuento, descuento, costo_transaccion)
 	
 	SELECT
-		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago(vmp.vmep_id) AS id_tipo_medio_pago,
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago(v.vent_codigo) AS id_tipo_medio_pago,
 		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo) AS id_canal,
 		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(v.vent_fecha) AS id_tiempo,
-		SUM(vmp.vmep_costo) AS costo_transaccion
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento(ISNULL(d.descu_tipo, 'Medio Pago')) AS id_tipo_descuento,
+		ISNULL(SUM(vd.vede_importe),
+		0) AS descuento,
+		ISNULL(SUM(vmp.vmep_costo),
+		0) AS costo_transaccion
 	FROM
 		GAME_OF_JOINS.venta_medio_pago vmp
 	INNER JOIN GAME_OF_JOINS.venta v ON
 		vmp.vmep_id = v.vent_venta_medio_pago
+	LEFT JOIN GAME_OF_JOINS.venta_descuento vd ON
+		v.vent_codigo = vd.vede_venta_codigo
+		AND vd.vede_descuento IN (
+		SELECT
+			d.descu_id
+		FROM
+			GAME_OF_JOINS.descuento d
+		WHERE
+			d.descu_tipo = 'Medio Pago')
+	LEFT JOIN GAME_OF_JOINS.descuento d ON
+		vd.vede_descuento = d.descu_id
 	GROUP BY
-		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago(vmp.vmep_id),
-		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo) ,
-		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(v.vent_fecha)
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago(v.vent_codigo),
+		GAME_OF_JOINS.BI_Obtener_Id_Canal(v.vent_codigo),
+		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(v.vent_fecha),
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Descuento(ISNULL(d.descu_tipo, 'Medio Pago'))
 GO
 
 --hechos_venta
@@ -956,7 +1020,7 @@ GO
 CREATE PROCEDURE GAME_OF_JOINS.BI_Migrar_Hechos_Venta
 AS 
 	INSERT INTO GD2C2022.GAME_OF_JOINS.BI_hechos_venta
-	(id_tiempo, id_cliente, id_canal, id_categoria, id_producto, cantidad, precio_unitario)
+	(id_tiempo, id_cliente, id_canal, id_categoria, id_producto, id_tipo_medio_pago, cantidad, precio_unitario)
 
 	SELECT
 		GAME_OF_JOINS.BI_Obtener_Id_Tiempo(ve.vent_fecha) AS id_tiempo,
@@ -964,6 +1028,7 @@ AS
 		GAME_OF_JOINS.BI_Obtener_Id_Canal(vp.vpro_venta_codigo) AS id_canal,
 		GAME_OF_JOINS.BI_Obtener_Id_Categoria(pc.pcat_categoria) AS id_categoria,
 		GAME_OF_JOINS.BI_Obtener_Id_Producto(vp.vpro_producto_codigo) AS id_producto,
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago(vp.vpro_venta_codigo) AS id_tipo_medio_pago,
 		SUM(vp.vpro_cantidad) AS cantidad,
 		MAX(vp.vpro_precio) AS precio_unitario
 	FROM
@@ -979,7 +1044,8 @@ AS
 		GAME_OF_JOINS.BI_Obtener_Id_Cliente(ve.vent_cliente),
 		GAME_OF_JOINS.BI_Obtener_Id_Canal(vp.vpro_venta_codigo),
 		GAME_OF_JOINS.BI_Obtener_Id_Categoria(pc.pcat_categoria),
-		GAME_OF_JOINS.BI_Obtener_Id_Producto(vp.vpro_producto_codigo)
+		GAME_OF_JOINS.BI_Obtener_Id_Producto(vp.vpro_producto_codigo),
+		GAME_OF_JOINS.BI_Obtener_Id_Tipo_Medio_Pago(vp.vpro_venta_codigo)
 GO
 
 --hechos_Envio
@@ -1028,20 +1094,23 @@ GO
 
 CREATE VIEW GAME_OF_JOINS.BI_VW_Ganancias_Mensuales
 AS	
-	SELECT		ti.anio anio,
-				ti.mes mes,
-				ca.descripcion canal_de_venta,
-				ISNULL(SUM(hve.cantidad * hve.precio_unitario), 0) - ISNULL((SELECT SUM(hmp.costo_transaccion) FROM GAME_OF_JOINS.BI_hechos_medio_pago hmp WHERE hmp.id_tiempo = hve.id_tiempo), 0) - ISNULL((SELECT SUM(hco.cantidad * hco.precio_unitario) FROM GAME_OF_JOINS.BI_hechos_compra hco WHERE hco.id_tiempo = hve.id_tiempo), 0) ganancia_mensual
-	FROM		GAME_OF_JOINS.BI_hechos_venta hve
-	INNER JOIN	GAME_OF_JOINS.BI_tiempo ti
-	ON			hve.id_tiempo = ti.id_tiempo
-	INNER JOIN	GAME_OF_JOINS.BI_canal ca
-	ON			hve.id_canal = ca.id_canal
-	GROUP BY	hve.id_tiempo,
-				ti.anio,
-				ti.mes, 
-				hve.id_canal, 
-				ca.descripcion
+	SELECT
+		ti.anio anio,
+		ti.mes mes,
+		ca.descripcion canal_de_venta,
+		ISNULL(SUM(hve.cantidad * hve.precio_unitario), 0) - ISNULL((SELECT SUM(hmp.costo_transaccion) FROM GAME_OF_JOINS.BI_hechos_medio_pago hmp WHERE hmp.id_tiempo = hve.id_tiempo AND hmp.id_canal = hve.id_canal), 0) - ISNULL((SELECT SUM(hco.cantidad * hco.precio_unitario) FROM GAME_OF_JOINS.BI_hechos_compra hco WHERE hco.id_tiempo = hve.id_tiempo), 0) ganancia_mensual
+	FROM
+		GAME_OF_JOINS.BI_hechos_venta hve
+	INNER JOIN GAME_OF_JOINS.BI_tiempo ti ON
+		hve.id_tiempo = ti.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_canal ca ON
+		hve.id_canal = ca.id_canal
+	GROUP BY
+		hve.id_tiempo,
+		ti.anio,
+		ti.mes,
+		hve.id_canal,
+		ca.descripcion
 GO
 
 
@@ -1120,12 +1189,12 @@ GO
  * por mes.
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario') IS NOT NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
+IF Object_id('GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario') IS NOT NULL 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_categorias_mas_vendidas_por_rango_etario 
+CREATE VIEW GAME_OF_JOINS.BI_VW_Categorias_Mas_Vendidas_Por_Rango_Etario 
 AS
 
 	WITH ranking_categorias_por_edad AS (
@@ -1181,39 +1250,20 @@ AS
 	SELECT
 		ti.anio AS anio,
 		ti.mes AS mes,
-		--medio_pago AS medio_pago,
-		SUM(hv.cantidad * hv.precio_unitario) AS total_ventas,
-		(
-		SELECT
-			SUM(hd.valor_total)
-		FROM
-			GAME_OF_JOINS.BI_hechos_descuento hd
-		INNER JOIN GAME_OF_JOINS.BI_tipo_descuento td ON
-			hd.id_tipo_descuento = td.id_tipo_descuento
-		WHERE
-			td.descripcion = 'Medio Pago'
-			AND hd.id_tiempo = ti.id_tiempo) AS descuentos,
-		(
-		SELECT
-			SUM(hmp.costo_transaccion)
-		FROM
-			GAME_OF_JOINS.BI_hechos_medio_pago hmp
-		WHERE
-			hmp.id_tiempo = ti.id_tiempo) AS costos,
-		COUNT(*) AS la_resta_que_falta
-		--faltaría borrar las 3 de arriba después de probar y hacer acá la resta
-	
-		FROM GAME_OF_JOINS.BI_hechos_venta hv
+		tmp.descripcion AS medio_pago,
+		SUM(hv.cantidad * hv.precio_unitario) - (SELECT SUM(hmp.descuento) - SUM(hmp.costo_transaccion) FROM GAME_OF_JOINS.BI_hechos_medio_pago hmp WHERE hmp.id_tiempo = hv.id_tiempo AND hmp.id_tipo_medio_pago = hv.id_tipo_medio_pago) AS ingresos_totales
+	FROM
+		GAME_OF_JOINS.BI_hechos_venta hv
+	INNER JOIN GAME_OF_JOINS.BI_tipo_medio_pago tmp ON
+		hv.id_tipo_medio_pago = tmp.id_tipo_medio_pago
 	INNER JOIN GAME_OF_JOINS.BI_tiempo ti ON
 		hv.id_tiempo = ti.id_tiempo
-		--faltaría agregar la dimensión tipo medio pago a hechos_ventas, sino no podes saber como distribuir los ingresos 
-		--INNER JOIN GAME_OF_JOINS.BI_tipo_medio_pago mp
-		--ON hv.
-	
-		GROUP BY ti.id_tiempo,
+	GROUP BY
 		ti.anio,
-		ti.mes
-		--mp.descripcion
+		ti.mes,
+		tmp.descripcion,
+		hv.id_tipo_medio_pago,
+		hv.id_tiempo
 
 GO
 
@@ -1236,7 +1286,7 @@ AS
 		ti.mes AS mes,
 		ca.descripcion AS canal,
 		td.descripcion AS tipo_de_descuento,
-		SUM(hd.valor_total) AS total_descuento
+		SUM(hd.descuento) AS total_descuento
 	FROM
 		GAME_OF_JOINS.BI_hechos_descuento hd
 	INNER JOIN GAME_OF_JOINS.BI_tiempo ti ON
@@ -1250,6 +1300,26 @@ AS
 		ti.mes,
 		ca.descripcion,
 		td.descripcion
+	UNION
+	SELECT
+		ti.anio AS anio,
+		ti.mes AS mes,
+		ca.descripcion AS canal,
+		td.descripcion AS tipo_de_descuento,
+		SUM(hmp.descuento) AS total_descuento
+	FROM
+		GAME_OF_JOINS.BI_hechos_medio_pago hmp
+	INNER JOIN GAME_OF_JOINS.BI_tiempo ti ON
+		hmp.id_tiempo = ti.id_tiempo
+	INNER JOIN GAME_OF_JOINS.BI_tipo_descuento td ON
+		hmp.id_tipo_descuento = td.id_tipo_descuento
+	INNER JOIN GAME_OF_JOINS.BI_canal ca ON
+		hmp.id_canal = ca.id_canal
+	GROUP BY
+		ti.anio,
+		ti.mes,
+		ca.descripcion,
+		td.descripcion
 GO
 
 /*
@@ -1258,13 +1328,13 @@ GO
  * total de envío mensuales.
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual') IS NOT 
+IF Object_id('GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual') IS NOT 
    NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_porcentaje_envios_provincia_mensual 
+CREATE VIEW GAME_OF_JOINS.BI_VW_Porcentaje_Envios_Provincia_Mensual 
 AS 
 	SELECT
 		ti.anio AS anio,
@@ -1288,13 +1358,13 @@ GO
  * Valor promedio de envío por Provincia por Medio De Envío anual.
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia') IS NOT 
+IF Object_id('GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia') IS NOT 
    NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_valor_promedio_envio_provincia 
+CREATE VIEW GAME_OF_JOINS.BI_VW_Valor_Promedio_Envio_Provincia 
 AS 
 	SELECT
 		ti.anio AS anio,
@@ -1322,13 +1392,13 @@ GO
  * que los precios siempre van en aumento.
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor') IS NOT 
+IF Object_id('GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor') IS NOT 
    NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_aumento_promedio_proveedor 
+CREATE VIEW GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor 
 AS 
 
 	WITH aumentos_proveedores AS (
@@ -1362,13 +1432,13 @@ GO
  * Los 3 productos con mayor cantidad de reposición por mes. 
  */
 
-IF Object_id('GAME_OF_JOINS.BI_VW_productos_mayor_reposicion') IS NOT 
+IF Object_id('GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion') IS NOT 
    NULL 
-  DROP VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+  DROP VIEW GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion 
 
 GO 
 
-CREATE VIEW GAME_OF_JOINS.BI_VW_productos_mayor_reposicion 
+CREATE VIEW GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion 
 AS 
 	WITH ranking_productos_reposicion AS (
 	SELECT
@@ -1430,6 +1500,7 @@ GO
 ------------------------------------------------
 
 EXEC GAME_OF_JOINS.BI_Drop_All_Procedures
+EXEC GAME_OF_JOINS.BI_Drop_All_Functions
 
 GO
 
@@ -1439,7 +1510,7 @@ GO
 
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Ganancias_Mensuales ORDER BY anio ASC, mes ASC, canal_de_venta ASC
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Productos_Con_Mayor_Rentabilidad_Anual ORDER BY anio ASC, rentabilidad DESC
---SELECT * FROM GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago ORDER BY anio ASC, mes ASC, medio_de_pago ASC
+--SELECT * FROM GAME_OF_JOINS.BI_VW_Ingresos_Mensuales_Medio_Pago ORDER BY anio ASC, mes ASC, medio_pago ASC
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Descuentos_Mensuales_Por_Canal_Por_Tipo ORDER BY anio ASC, mes ASC, tipo_de_descuento ASC
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Productos_Mayor_Reposicion ORDER BY mes, anio, cantidad DESC
 --SELECT * FROM GAME_OF_JOINS.BI_VW_Aumento_Promedio_Proveedor ORDER BY anio ASC, proveedor ASC
