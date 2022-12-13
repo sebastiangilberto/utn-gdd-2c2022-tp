@@ -64,13 +64,17 @@ Luego podemos crear el Modelo BI corriendo
 
 Ya podemos hacer consultas libremente sobre el modelo OLPT y el OLAP
 
+### Estrategia
+
+> _Ver estrategia completa [acá](https://docs.google.com/document/d/1paB0gAnSDXCQDmvi9ZKRWKA0mA6qKuxeI5CN1_-AKPg/edit?usp=sharing)
+
 ### DER Modelo Datos
 
-[![DER Modelo Datos](tp/entregas/3_modelo_bi/der_datos_3.svg)](https://github.com/sebastiangilberto/utn-gdd-2c2022-tp/raw/main/tp/entregas/3_modelo_bi/der_datos_3.svg)
+[![DER Modelo Datos](tp/der/der_datos.svg)](https://github.com/sebastiangilberto/utn-gdd-2c2022-tp/raw/main/tp/der/der_datos.svg)
 
 ### DER Modelo BI
 
-[![DER Modelo BI](tp/entregas/3_modelo_bi/der_BI.svg)](https://github.com/sebastiangilberto/utn-gdd-2c2022-tp/raw/main/tp/entregas/3_modelo_bi/der_BI.svg)
+[![DER Modelo BI](tp/der/der_BI.svg)](https://github.com/sebastiangilberto/utn-gdd-2c2022-tp/raw/main/tp/der/der_BI.svg)
 
 ### LucidChart
 
